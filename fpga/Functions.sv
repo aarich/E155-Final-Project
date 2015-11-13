@@ -25,34 +25,37 @@ module UARTtxrx(input  logic clk,
     assign sdo = (done & !wasdone) ? cyphertext[127] : sdodelayed;
 endmodule
 
+module hBridgeIn(input logic pwr,done,
+				 output logic out);
+	//cuts power to H-Bridge when done is asserted
+	assign out = power & ~done;
+endmodule
 
 module pwm(input logic [6:0] power,
 		   input logic clk,
 		   output logic wave);
 	//Takes in an input signal and outputs corresponding PWM signal
 	logic [6:0] count;
-	always_ff @(posedge clk)
-		begin
-			count <= count + 1'b1;
-		end
+	timer #(7) pwmTimer(clk,reset,count);
 	assign wave = (power < count);
 
 module durcheck(input logic[7:0] dur,
-				input logic clk,
+				input logic clk,reset,
 				output logic done);
 	//checks the duration and cuts power to the wheels when done
 	logic[7:0] durTime;
-	timer #(8) durTimer(clk,durTime);
-	assign done = ~|(dur ^ durTime);
+	timer #(30) durTimer(clk,reset,durTime);
+	assign done = ~|(dur ^ durTime[29:21]);
 endmodule
 
 
 module timer #(parameter WIDTH=8)
-			  (input logic clk,
+			  (input logic clk,reset,
 			   output logic [WIDTH-1:0] timeout);
 	//a WIDTH-bit timer
-	always_ff @(posedge clk)
+	always_ff @(posedge clk,posedge reset)
 		begin
-			timeout <= timeout + 1'b1;
+			if(reset) timeout <= 0;
+			else timeout <= timeout + 1'b1;
 		end
 endmodule
