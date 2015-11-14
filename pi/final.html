@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>E155 Final Project</title>
+	<meta http-equiv="content-type" content="text-html;charset=utf-8">
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+  </head>
+  <body>
+    <div id="bg">
+    </div>
+    <div class="container">
+      <div class="jumbotron">
+        <h1>E155 Final Project</h1>
+        <p>Microprocessors at Harvey Mudd College, Fall 2015</p>
+        <p>Aaron Rosen and Alex Rich</p> 
+      </div>
+      <div class="row">
+        <div class="col-sm-4">
+          <div class="panel">
+            <h3>Send Direct Command</h3>
+				    <form action="cgi-bin/inputChars" method="GET">
+              <div class="form-group">
+    					  <label for="l">Left Power:</label>
+						    <input type="text" class="form-control" name="l" placeholder="[-127, 127]">
+              </div>
+              <div class="form-group">
+      					<label for="r">Right Power:</label>
+  						  <input type="text" class="form-control" name="r" placeholder="[-127, 127]">
+              </div>
+              <div class="form-group">
+    					  <label for="l">Time</label>
+						    <input type="text" class="form-control" name="t" placeholder="1/10 seconds, [0, 255]">
+              </div>
+					    <input type="submit" class="btn btn-default" value="Submit Command">
+				    </form>
+  	    	</div>
+        </div>
+        <div class="col-sm-4">
+          <div class="panel">
+            
+          </div>
+        </div>
+        <div class="col-sm-4">
+          <div class="panel">
+            <h3>Return Home</h3>        
+            	<a href="index.html">Go Back >></a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    </div>
+  </div>
+  </body>
+</html>
