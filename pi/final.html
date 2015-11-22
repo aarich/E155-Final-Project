@@ -1,55 +1,170 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>E155 Final Project</title>
-	<meta http-equiv="content-type" content="text-html;charset=utf-8">
-    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
-  </head>
-  <body>
-    <div id="bg">
+  <title>E155 Final Project</title>
+  <meta http-equiv="content-type" content="text-html;charset=utf-8">
+  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+  <script type="text/javascript" src="http://code.jquery.com/jquery.min.js"></script>
+  <style>
+    .grid { margin:1em auto; border-collapse:collapse }
+    .grid td {
+      cursor:pointer;
+      width:60px; height:60px;
+      border:1px solid #ccc;
+      text-align:center;
+      font-family:sans-serif; font-size:13px
+    }
+    .grid td.clicked {
+      background-color:yellow;
+      font-weight:bold; color:red;
+    }
+  </style>
+</head>
+<body>
+  <div id="bg"></div>
+  <div class="container">
+    <div class="jumbotron">
+      <h1>E155 Final Project</h1>
+      <p>Microprocessors at Harvey Mudd College, Fall 2015</p>
+      <p>Aaron Rosen and Alex Rich</p> 
     </div>
-    <div class="container">
-      <div class="jumbotron">
-        <h1>E155 Final Project</h1>
-        <p>Microprocessors at Harvey Mudd College, Fall 2015</p>
-        <p>Aaron Rosen and Alex Rich</p> 
-      </div>
-      <div class="row">
-        <div class="col-sm-4">
-          <div class="panel">
-            <h3>Send Direct Command</h3>
-				    <form action="cgi-bin/inputChars" method="GET">
-              <div class="form-group">
-    					  <label for="l">Left Power:</label>
-						    <input type="text" class="form-control" name="l" placeholder="[-127, 127]">
-              </div>
-              <div class="form-group">
-      					<label for="r">Right Power:</label>
-  						  <input type="text" class="form-control" name="r" placeholder="[-127, 127]">
-              </div>
-              <div class="form-group">
-    					  <label for="l">Time</label>
-						    <input type="text" class="form-control" name="t" placeholder="1/10 seconds, [0, 255]">
-              </div>
-					    <input type="submit" class="btn btn-default" value="Submit Command">
-				    </form>
-  	    	</div>
-        </div>
-        <div class="col-sm-4">
-          <div class="panel">
-            
+    <div class="row">
+      <div class="col-sm-4">
+        <div class="panel">
+          <h3>Send Command</h3>
+          <form action="cgi-bin/inputChars" method="GET">
+            <div class="form-group">
+              <label for="l">Left Power:</label>
+              <input type="text" class="form-control" name="l" placeholder="[-127, 127]">
+            </div>
+            <div class="form-group">
+              <label for="r">Right Power:</label>
+              <input type="text" class="form-control" name="r" placeholder="[-127, 127]">
+            </div>
+            <div class="form-group">
+              <label for="l">Time</label>
+              <input type="text" class="form-control" name="t" placeholder="1/10 seconds, [0, 255]">
+            </div>
+              <input type="submit" class="btn btn-default" value="Submit Command">
+            </form>
           </div>
         </div>
         <div class="col-sm-4">
           <div class="panel">
-            <h3>Return Home</h3>        
-            	<a href="index.html">Go Back >></a>
+            <h3 id="pac">Point and Click</h3>
+            <div id="g"></div>
+          </div>
+        </div>
+        <div class="col-sm-4">
+          <div class="panel">
+            <h3 id="commandListHeader">Commands</h3>  
+            <div id="commands"></div>      
+            <!--<a href="index.html">Go Back >></a>-->
           </div>
         </div>
       </div>
-    </div>
-
     </div>
   </div>
-  </body>
+</body>
+
+<script>
+var commandList = [];
+var isExecuting = false;
+
+var lastClicked;
+
+var grid = clickableGrid(5,5,function(el, row, col, i){
+  var l = Math.floor((Math.random() * 255) + 1);
+  var r = Math.floor((Math.random() * 255) + 1);
+  var t = Math.floor((Math.random() * 255) + 1);
+
+  el.className = 'clicked';
+  if (el == lastClicked) {
+    return;
+  }
+  if (lastClicked) lastClicked.className = '';
+  lastClicked = el;
+
+  commandList.push({l:l,r:r,t:t});
+  executeCommand();
+})
+
+function executeCommand() {
+  updateList();
+  if (commandList.length == 0) {
+    return;
+  } else if (isExecuting) {
+    // If we're currently executing a command, check back in 0.1 sec
+    setTimeout(function () {
+          executeCommand();
+      }, 100);
+    return;
+  }
+  isExecuting = true
+
+  var command = commandList.shift();
+  console.log("sending command: ");
+  console.log(commandToString(command));
+
+  var xmlHttp = new XMLHttpRequest();
+  xmlHttp.onreadystatechange = function() { 
+    if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
+      isExecuting = false;
+      executeCommand();
+    } else if (xmlHttp.readyState == 4) {
+      document.getElementById('pac').innerHTML = xmlHttp.status.toString().concat(": There was an error!");
+      document.getElementById('pac').style.color = 'red';
+      setTimeout(function () {
+          document.getElementById('pac').innerHTML = "Point and Click";
+          document.getElementById('pac').style.color = 'black';
+      }, 2000);
+    }
+  }
+  var url = "cgi-bin/inputChars";
+  url = url.concat("?l=", command.l.toString(), "&r=", command.r.toString(), "&t=", command.t.toString());
+  xmlHttp.open("GET", url, true); // true for asynchronous 
+  xmlHttp.send(null);
+}
+
+function updateList() {
+  var str = "Current commands in buffer: <br>"
+  for(var i=0;i<commandList.length;i++){
+    str = str.concat((i+1).toString(), " -- ", commandToString(commandList[i]), "<br>");
+  }
+  str = str.concat("");
+  document.getElementById('commands').innerHTML = str;
+}
+
+function commandToString(command) {
+  var str = ""
+  str = str.concat("L: ", command.l.toString(), ", R: ", command.r.toString(), ", T: ", command.t.toString());
+  return str;
+}
+
+document.getElementById('g').appendChild(grid);
+
+function clickableGrid(rows, cols, callback) {
+  var i = 0;
+  var grid = document.createElement('table');
+  grid.className = 'grid';
+  for (var r=0;r<rows;++r){
+    var tr = grid.appendChild(document.createElement('tr'));
+    for (var c=0;c<cols;++c){
+      var cell = tr.appendChild(document.createElement('td'));
+      cell.innerHTML = 'X';
+      if (i== Math.floor(rows * cols / 2)) {
+        cell.className = 'clicked';
+        lastClicked = cell;
+      }
+      ++i;
+      cell.addEventListener('click',(function(el,r,c,i){
+        return function(){
+          callback(el,r,c,i);
+        }
+      })(cell,r,c,i),false);
+    }
+  }
+  return grid;
+}
+</script>
 </html>
