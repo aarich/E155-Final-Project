@@ -15,7 +15,7 @@ module VehicleControl(input logic clk,
 		controller control(clk,loadComplete,executeComplete,ackSent,loadStart,executeStart,ackStart); //datapath controller
 		
 		receiveMSG RXin(clk,pllclk,RX,loadStart,lmotor,rmotor,dur,loadComplete);
-		executeCommand executor(clk,(loadComplete | executeStart),lmotor,rmotor,dur,executeComplete,HL,HR);
+		executeCommand executor(clk,(loadComplete | executeStart),loadStart,lmotor,rmotor,dur,executeComplete,HL,HR);
 		sendAck TXout(pllclk,ackStart,ackSent,TX);
 		
 endmodule
@@ -71,14 +71,14 @@ module receiveMSG(input logic clk,PLLclk,
 endmodule
 
 module executeCommand(input logic clk,
-							 input logic resetDur,
+							 input logic resetDur,presetDur,
 							 input logic [7:0]lmotor,rmotor,dur,
 							 output logic executeComplete,
 							 output logic [1:0] HL,HR);
 	//top level for message execute subsystem
 	logic LPWM,RPWM;
 	
-	durcheck duration(dur,clk,resetDur,executeComplete);
+	durcheck duration(dur,clk,resetDur,presetDur,executeComplete);
 	pwm lmotorPWM(lmotor[6:0],clk,resetDur,LPWM);
 	pwm rmotorPWM(rmotor[6:0],clk,resetDur,RPWM);
 	hBridgeIn LHbridge(LPWM,executeComplete,lmotor[7],HL);
@@ -167,13 +167,14 @@ module pwm(input logic [6:0] power,
 endmodule
 
 module durcheck(input logic[7:0] dur,
-				input logic clk,reset,
+				input logic clk,reset,preset,
 				output logic done);
 	//checks the duration and cuts power to the wheels when done
 	logic[29:0] durTime;
-	always_ff @(posedge clk,posedge reset)
+	always_ff @(posedge clk,posedge reset,posedge preset)
 		begin
 			if(reset) durTime <=0;
+			else if(preset) durTime <= {dur,22'b0};
 			else if(done) durTime <= durTime;
 			else durTime <= durTime + 1'b1;
 		end
