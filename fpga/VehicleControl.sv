@@ -3,19 +3,20 @@ module VehicleControl(input logic clk,
 							 output logic TX,
 							 output logic[1:0] HL,HR);
 		//top level module
-		//TODO: Make PLL for UART
-		//TODO: add slowclk here
 		logic[7:0] lmotor,rmotor,dur;
 		logic loadStart,loadComplete;
 		logic executeStart,executeComplete; //executeStart should pulse when starting rather than staying high
 		logic ackStart,ackSent;
+		logic pllclk;
+		logic reset,locked;
 		
+		PLLclk pll(reset,clk,pllclk,locked);
 		
-		controller control(clk,loadComplete,executeComplete,ackSent,loadStart,executeStart,ackStart);
+		controller control(clk,loadComplete,executeComplete,ackSent,loadStart,executeStart,ackStart); //datapath controller
 		
-		receiveMSG RXin(clk,RX,loadStart,lmotor,rmotor,dur,loadComplete);
-		executeCommand executor(clk,executeStart,lmotor,rmotor,dur,executeComplete,HL,HR);
-		sendAck TXout(clk,ackStart,ackSent,TX);
+		receiveMSG RXin(clk,pllclk,RX,loadStart,lmotor,rmotor,dur,loadComplete);
+		executeCommand executor(clk,(loadComplete | executeStart),lmotor,rmotor,dur,executeComplete,HL,HR);
+		sendAck TXout(pllclk,ackStart,ackSent,TX);
 		
 endmodule
 
@@ -52,21 +53,21 @@ module controller(input logic clk,
 	assign executeStart = execute & ~ executeDelayed;
 endmodule
 
-module receiveMSG(input logic clk,
+module receiveMSG(input logic clk,PLLclk,
 				  input logic RX,loadStart,
 				  output logic[7:0] lmotor,rmotor,dur,
 				  output logic loadComplete);
 	//top level for message recive subsystem
-	//TODO: Pull slowClk out of this module hierarchy and make slowclk an input
 	logic[7:0] char;
 	logic RXdone;
-	UARTRX receiveChar(clk,RX,char,RXdone);
-	shift3rst receiveCtr(loadStart,RXdone,loadComplete,loadComplete);
+	logic resetTrigger;
+	UARTRX receiveChar(clk,PLLclk,RX,loadStart,char,RXdone);
+	shift3rst receiveCtr(loadStart,RXdone,resetTrigger,loadComplete);
 	always_ff @(posedge RXdone)
 		begin
 			if(loadStart) {lmotor,rmotor,dur}={rmotor,dur,char};
 		end
-		
+	flop #(1) loadCompleteDelay(clk,loadComplete,resetTrigger);
 endmodule
 
 module executeCommand(input logic clk,
@@ -99,46 +100,52 @@ module UARTTX(input logic clk,
 				  output logic msgSent);
 	//UART TX Pin
 	//ACK is "A" (0x41), msg is 11'b0_0100_0001_11 = 11'b001_0000_0111 = 11'h107
-	logic valid;
-	assign valid =1;
+	logic resetTrigger;
 	logic clk2;
 	logic[10:0]msg;
 	logic[3:0]count; //keeps track of the number of bits sent
-	slowclk baudrate(clk,valid,clk2);
+	slowclk baudrate(clk,1'b1,clk2);
 	always_ff @(posedge clk2)
 		begin
 			if(ackStart) {msg[9:0],msg[10]}={msg}; //this is an 11-bit shift register
 			else {msg[9:0],msg[10]} = {10'h107,1'h0};	//reset message loop to default position
 		end
 	assign TX = msg[0];
-	timer #(4) bitCount(clk2,0,count);
-	assign msgSent = &(count & 4'hB); //message send high after 11th bit sent
+	timer #(4) bitCount(clk2,resetTrigger,count);
+	assign msgSent = (count == 11); //message send high after 11th bit sent
+	flop #(1) msgSentDelay(clk,msgSent,resetTrigger);
 	
 endmodule
 
-module UARTRX(input logic clk,
+module UARTRX(input logic clk,PLLclk,
 			  input logic RX,
+			  input logic loadStart,
 			  output logic[7:0] char,
 			  output logic done);
 	//UART RX Pin
 	logic[3:0] validCheck;
 	logic valid;
-	logic clk2;
+	logic UARTclk;
 	logic[1:0] stopBits;
+	logic resetTrigger;
+	logic startBit;
+	logic loadStartDelayed,doneDelayed;
 	
 	always_ff @(posedge clk,posedge done)
 		begin
 			if(done) valid <= 0;
 			else valid <= valid | (~|(validCheck));
 		end
-	shift4 sampler(RX,clk,validCheck);
-	slowclk baudrate(clk,valid,clk2);
-	always_ff @(posedge clk2)
+	shift4 sampler(RX,PLLclk,validCheck);
+	slowclk baudrate(PLLclk,valid,UARTclk);
+	always_ff @(posedge UARTclk,posedge resetTrigger)
 		begin
-			if(valid) {done,char,stopBits}={char,stopBits,RX}; //this is an 11-bit shift register
-			else	{done,char,stopBits} = 11'h001;
+			if(resetTrigger) {done,startBit,char,stopBits} = 12'h001;
+			else {done,startBit,char,stopBits}={startBit,char,stopBits,RX}; //this is an 12-bit shift register	
 		end
-	
+	delay #(1) doneDelay(clk,done,doneDelayed);
+	delay #(1) loadStartDelay(clk,loadStart,loadStartDelayed);
+	assign resetTrigger = doneDelayed | (~loadStartDelayed & loadStart);
 endmodule
 
 module hBridgeIn(input logic pwr,done,direction,
@@ -207,19 +214,18 @@ endmodule
 module slowclk(input logic clk,valid,
 			   output logic clk2);
 	//creates a second slow timer that is reliant on valid for centering
-	logic [3:0]count;
+	logic [2:0]count;
 	always_ff  @(posedge clk)
 		begin
-			if(valid) count <= count + 4'h1; //if the signal is valid, increment the counter normally
+			if(valid) count <= count + 3'h1; //if the signal is valid, increment the counter normally
 			else
 				begin  //if the signal is not valid, hold the slow clock right before the transition
-					count[3] <= 0;
-					count[2] <= 1;
+					count[2] <= 0;
 					count[1] <= 1;
 					count[0] <= 1;
 				end
 		end
-	assign clk2=count[3];
+	assign clk2=count[2];
 endmodule
 
 	
@@ -243,3 +249,123 @@ module flop #(parameter WIDTH=1)
 			q <= d;
 		end
 endmodule 
+
+module delay #(parameter WIDTH=1)
+				 (input logic clk,
+				  input logic [WIDTH-1:0] d,
+				  output logic [WIDTH-1:0] q);
+				  
+	logic[WIDTH-1:0] p;
+	always_ff @(posedge clk)
+		begin
+			p <= d;
+			q <= p;
+		end
+endmodule 
+
+/*
+module Testbench();
+
+	//TEST: receiveMSG
+	//standalone module verified: 11/21 @23:07
+	//logic needed:
+	logic clk,PLLclk;
+	logic RX;
+	logic loadStart;
+	logic[7:0] lmotor,rmotor,dur;
+	logic loadComplete;
+	receiveMSG dut(clk,PLLclk,RX,loadStart,lmotor,rmotor,dur,loadComplete);
+	//chars: 0x95, 0xB6, 0x35
+	always
+		begin
+			clk <=1; #50; clk <=0; #50;
+		end
+
+	always
+		begin
+			PLLclk <=1; #1100; PLLclk <=0; #1100;
+		end
+				  
+	initial
+		begin
+			RX=1;
+		end
+		
+	always
+		begin
+			#100;
+			loadStart=0;
+			#100
+			loadStart=1;
+			#1000;
+			RX=0; //start
+			#17600;
+			RX=1; //1
+			#17600;
+			RX=0; //2
+			#17600;
+			RX=0; //3
+			#17600;
+			RX=1; //4
+			#17600;
+			RX=0; //5
+			#17600;
+			RX=1; //6
+			#17600;
+			RX=0; //7
+			#17600;
+			RX=1; //8
+			#17600;
+			RX=1; //stop
+			#17600;
+			#17600;
+			
+			#100000;
+			RX=0; //start
+			#17600;
+			RX=1; //1
+			#17600;
+			RX=0; //2
+			#17600;
+			RX=1; //3
+			#17600;
+			RX=1; //4
+			#17600;
+			RX=0; //5
+			#17600;
+			RX=1; //6
+			#17600;
+			RX=1; //7
+			#17600;
+			RX=0; //8
+			#17600;
+			RX=1; //stop
+			#17600;
+			#17600;
+			
+			#100000;
+			RX=0; //start
+			#17600;
+			RX=0; //1
+			#17600;
+			RX=0; //2
+			#17600;
+			RX=1; //3
+			#17600;
+			RX=1; //4
+			#17600;
+			RX=0; //5
+			#17600;
+			RX=1; //6
+			#17600;
+			RX=0; //7
+			#17600;
+			RX=1; //8
+			#17600;
+			RX=1; //stop
+			#17600;
+			#17600;
+			#100000;
+		end
+endmodule
+*/
