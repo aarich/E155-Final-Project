@@ -3,8 +3,11 @@
 <head>
   <title>E155 Final Project</title>
   <meta http-equiv="content-type" content="text-html;charset=utf-8">
-  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
-  <script type="text/javascript" src="http://code.jquery.com/jquery.min.js"></script>
+  <link rel="stylesheet" 
+    href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/
+      css/bootstrap.min.css">
+  <script type="text/javascript" 
+    src="http://code.jquery.com/jquery.min.js"></script>
   <style>
     .grid { margin:1em auto; border-collapse:collapse }
     .grid td {
@@ -35,17 +38,21 @@
           <form action="cgi-bin/inputChars" method="GET">
             <div class="form-group">
               <label for="l">Left Power:</label>
-              <input type="text" class="form-control" name="l" placeholder="[-127, 127]">
+              <input type="text" class="form-control" 
+                name="l" placeholder="[-127, 127]">
             </div>
             <div class="form-group">
               <label for="r">Right Power:</label>
-              <input type="text" class="form-control" name="r" placeholder="[-127, 127]">
+              <input type="text" class="form-control" 
+                name="r" placeholder="[-127, 127]">
             </div>
             <div class="form-group">
               <label for="l">Time</label>
-              <input type="text" class="form-control" name="t" placeholder="1/10 seconds, [0, 255]">
+              <input type="text" class="form-control" 
+                name="t" placeholder="1/10 seconds, [0, 255]">
             </div>
-              <input type="submit" class="btn btn-default" value="Submit Command">
+              <input type="submit" class="btn btn-default" 
+                value="Submit Command">
             </form>
           </div>
         </div>
@@ -112,7 +119,8 @@ function executeCommand() {
       isExecuting = false;
       executeCommand();
     } else if (xmlHttp.readyState == 4) {
-      document.getElementById('pac').innerHTML = xmlHttp.status.toString().concat(": There was an error!");
+      document.getElementById('pac').innerHTML = 
+        xmlHttp.status.toString().concat(": There was an error!");
       document.getElementById('pac').style.color = 'red';
       setTimeout(function () {
           document.getElementById('pac').innerHTML = "Point and Click";
@@ -121,7 +129,8 @@ function executeCommand() {
     }
   }
   var url = "cgi-bin/inputChars";
-  url = url.concat("?l=", command.l.toString(), "&r=", command.r.toString(), "&t=", command.t.toString());
+  url = url.concat("?l=", command.l.toString(), "&r=", 
+    command.r.toString(), "&t=", command.t.toString());
   xmlHttp.open("GET", url, true); // true for asynchronous 
   xmlHttp.send(null);
 }
@@ -129,7 +138,8 @@ function executeCommand() {
 function updateList() {
   var str = "Current commands in buffer: <br>"
   for(var i=0;i<commandList.length;i++){
-    str = str.concat((i+1).toString(), " -- ", commandToString(commandList[i]), "<br>");
+    str = str.concat((i+1).toString(), " -- ", 
+      commandToString(commandList[i]), "<br>");
   }
   str = str.concat("");
   document.getElementById('commands').innerHTML = str;
@@ -137,7 +147,8 @@ function updateList() {
 
 function commandToString(command) {
   var str = ""
-  str = str.concat("L: ", command.l.toString(), ", R: ", command.r.toString(), ", T: ", command.t.toString());
+  str = str.concat("L: ", command.l.toString(), ", R: ", 
+    command.r.toString(), ", T: ", command.t.toString());
   return str;
 }
 
