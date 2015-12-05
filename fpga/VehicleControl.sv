@@ -15,7 +15,7 @@ module VehicleControl(input logic clk,
 		controller control(clk,loadComplete,executeComplete,ackSent,loadStart,executeStart,ackStart); //datapath controller
 		
 		receiveMSG RXin(clk,pllclk,RX,loadStart,lmotor,rmotor,dur,loadComplete);
-		executeCommand executor(clk,(loadComplete | executeStart),loadStart,lmotor,rmotor,dur,executeComplete,HL,HR);
+		executeCommand executor(clk,(loadComplete | executeStart),(~executeComplete & loadStart),lmotor,rmotor,dur,executeComplete,HL,HR);
 		sendAck TXout(pllclk,ackStart,ackSent,TX);
 		
 endmodule
@@ -78,7 +78,7 @@ module executeCommand(input logic clk,
 	//top level for message execute subsystem
 	logic LPWM,RPWM;
 	
-	durcheck duration(dur,clk,resetDur,presetDur,executeComplete);
+	durcheck #(30) duration(dur,clk,resetDur,presetDur,executeComplete);
 	pwm lmotorPWM(lmotor[6:0],clk,resetDur,LPWM);
 	pwm rmotorPWM(rmotor[6:0],clk,resetDur,RPWM);
 	hBridgeIn LHbridge(LPWM,executeComplete,lmotor[7],HL);
@@ -100,20 +100,23 @@ module UARTTX(input logic clk,
 				  output logic msgSent);
 	//UART TX Pin
 	//ACK is "A" (0x41), msg is 11'b0_0100_0001_11 = 11'b001_0000_0111 = 11'h107
+	//TODO: Change shift register to more directly include TX
 	logic resetTrigger;
+	logic ackStartPulse;
 	logic clk2;
 	logic[10:0]msg;
 	logic[3:0]count; //keeps track of the number of bits sent
 	slowclk baudrate(clk,1'b1,clk2);
 	always_ff @(posedge clk2)
 		begin
-			if(ackStart) {msg[9:0],msg[10]}={msg}; //this is an 11-bit shift register
+			if(ackStart) {msg[9:0],msg[10]}={msg[10:0]}; //this is an 11-bit shift register
 			else {msg[9:0],msg[10]} = {10'h107,1'h0};	//reset message loop to default position
 		end
 	assign TX = msg[0];
-	timer #(4) bitCount(clk2,resetTrigger,count);
-	assign msgSent = (count == 11); //message send high after 11th bit sent
-	flop #(1) msgSentDelay(clk,msgSent,resetTrigger);
+	timeren #(4) bitCount(clk2,resetTrigger,ackStart,count);
+	assign msgSent = (count == 11) & ackStart; //message send high after 11th bit sent
+	delay #(1) resetSig(clk,(msgSent|ackStartPulse),resetTrigger);
+	pulse ackPulse(clk,ackStart,ackStartPulse);
 	
 endmodule
 
@@ -166,19 +169,20 @@ module pwm(input logic [6:0] power,
 	assign wave = (power > count);
 endmodule
 
-module durcheck(input logic[7:0] dur,
+module durcheck #(parameter WIDTH=30)
+				(input logic[7:0] dur,
 				input logic clk,reset,preset,
 				output logic done);
 	//checks the duration and cuts power to the wheels when done
-	logic[29:0] durTime;
-	always_ff @(posedge clk,posedge reset,posedge preset)
+	logic[WIDTH-1:0] durTime;
+	always_ff @(posedge clk,posedge reset)
 		begin
 			if(reset) durTime <=0;
-			else if(preset) durTime <= {dur,22'b0};
+			else if(preset) durTime <= {dur,{WIDTH-8{1'b0}}};
 			else if(done) durTime <= durTime;
 			else durTime <= durTime + 1'b1;
 		end
-	assign done = &(dur & durTime[29:22]);
+	assign done = (dur == durTime[WIDTH-1:WIDTH-8]);
 endmodule
 
 module shift3rst(input logic in,clk,reset,
@@ -241,6 +245,17 @@ module timer #(parameter WIDTH=8)
 		end
 endmodule
 
+module timeren #(parameter WIDTH=8)
+			  (input logic clk,reset,enable,
+			   output logic [WIDTH-1:0] timeout);
+	//a WIDTH-bit timer with enable
+	always_ff @(posedge clk,posedge reset)
+		begin
+			if(reset) timeout <= 0;
+			else if(enable) timeout <= timeout + 1'b1;
+		end
+endmodule
+
 module flop #(parameter WIDTH=1)
 				 (input logic clk,
 				  input logic [WIDTH-1:0] d,
@@ -264,109 +279,39 @@ module delay #(parameter WIDTH=1)
 		end
 endmodule 
 
-/*
+module pulse(input logic clk,in,
+				 output logic out);
+	//creates a pulse when the input signal goes high
+	logic delayed;
+	delay inDelay(clk,in,delayed);
+	assign out = in & ~ delayed;
+endmodule
+
+
 module Testbench();
 
-	//TEST: receiveMSG
-	//standalone module verified: 11/21 @23:07
-	//logic needed:
-	logic clk,PLLclk;
-	logic RX;
-	logic loadStart;
-	logic[7:0] lmotor,rmotor,dur;
-	logic loadComplete;
-	receiveMSG dut(clk,PLLclk,RX,loadStart,lmotor,rmotor,dur,loadComplete);
-	//chars: 0x95, 0xB6, 0x35
+	//TEST: sendAck
+	//standalone module verified: 12/5 @ 00:53
+	//logic needed
+	logic pllclk;
+	logic ackStart;
+	logic ackSent;
+	logic TX;
+	sendAck dut(pllclk,ackStart,ackSent,TX);
+	
 	always
 		begin
-			clk <=1; #50; clk <=0; #50;
+			pllclk <=1; #10; pllclk <=0; #10;
 		end
-
-	always
-		begin
-			PLLclk <=1; #1100; PLLclk <=0; #1100;
-		end
-				  
+	
 	initial
 		begin
-			RX=1;
+			assign ackStart = 0;
+			#203;
+			assign ackStart = 1;
+			#2200;
+			assign ackStart = 0;
+			#200;
 		end
-		
-	always
-		begin
-			#100;
-			loadStart=0;
-			#100
-			loadStart=1;
-			#1000;
-			RX=0; //start
-			#17600;
-			RX=1; //1
-			#17600;
-			RX=0; //2
-			#17600;
-			RX=0; //3
-			#17600;
-			RX=1; //4
-			#17600;
-			RX=0; //5
-			#17600;
-			RX=1; //6
-			#17600;
-			RX=0; //7
-			#17600;
-			RX=1; //8
-			#17600;
-			RX=1; //stop
-			#17600;
-			#17600;
-			
-			#100000;
-			RX=0; //start
-			#17600;
-			RX=1; //1
-			#17600;
-			RX=0; //2
-			#17600;
-			RX=1; //3
-			#17600;
-			RX=1; //4
-			#17600;
-			RX=0; //5
-			#17600;
-			RX=1; //6
-			#17600;
-			RX=1; //7
-			#17600;
-			RX=0; //8
-			#17600;
-			RX=1; //stop
-			#17600;
-			#17600;
-			
-			#100000;
-			RX=0; //start
-			#17600;
-			RX=0; //1
-			#17600;
-			RX=0; //2
-			#17600;
-			RX=1; //3
-			#17600;
-			RX=1; //4
-			#17600;
-			RX=0; //5
-			#17600;
-			RX=1; //6
-			#17600;
-			RX=0; //7
-			#17600;
-			RX=1; //8
-			#17600;
-			RX=1; //stop
-			#17600;
-			#17600;
-			#100000;
-		end
+
 endmodule
-*/
