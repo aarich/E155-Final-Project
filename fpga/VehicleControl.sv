@@ -1,20 +1,31 @@
 module VehicleControl(input logic clk,
 							 input logic RX,
 							 output logic TX,
-							 output logic[1:0] HL,HR);
+							 output logic HbridgeEN,
+							 output logic[1:0] HL,HR,
+							 output logic[7:0] char,
+							 output logic sampler,loadComplete,loadStart,RXdone);
+				
 		//top level module
 		logic[7:0] lmotor,rmotor,dur;
-		logic loadStart,loadComplete;
+		//logic loadStart,loadComplete;
 		logic executeStart,executeComplete; //executeStart should pulse when starting rather than staying high
 		logic ackStart,ackSent;
 		logic pllclk;
 		logic reset,locked;
+		logic[1:0] HLled,HRled;
+		logic[2:0] state;
 		
-		PLLclk pll(reset,clk,pllclk,locked);
+		assign HbridgeEN = 1;
+		assign HLled = HL;
+		assign HRled = HR;
+		assign char = lmotor;
 		
-		controller control(clk,loadComplete,executeComplete,ackSent,loadStart,executeStart,ackStart); //datapath controller
+		PLLclk2 pll(reset,clk,pllclk,locked);
 		
-		receiveMSG RXin(clk,pllclk,RX,loadStart,lmotor,rmotor,dur,loadComplete);
+		controller control(clk,loadComplete,executeComplete,ackSent,loadStart,executeStart,ackStart,state); //datapath controller
+		
+		receiveMSG RXin(clk,pllclk,RX,loadStart,lmotor,rmotor,dur,loadComplete,sampler,RXdone);
 		executeCommand executor(clk,(loadComplete | executeStart),(~executeComplete & loadStart),lmotor,rmotor,dur,executeComplete,HL,HR);
 		sendAck TXout(pllclk,ackStart,ackSent,TX);
 		
@@ -26,9 +37,11 @@ module controller(input logic clk,
 						input logic ackSent,
 						output logic loadStart,
 						output logic executeStart,
-						output logic ackStart);
+						output logic ackStart,
+						output logic[2:0] outputState);
 	//datapath controller
 	reg[2:0] state;
+	assign outputState = state;
 	logic execute,executeDelayed;
 	always_ff @(posedge clk)
 		begin
@@ -56,18 +69,19 @@ endmodule
 module receiveMSG(input logic clk,PLLclk,
 				  input logic RX,loadStart,
 				  output logic[7:0] lmotor,rmotor,dur,
-				  output logic loadComplete);
+				  output logic loadComplete,sampler,RXdone);
 	//top level for message recive subsystem
 	logic[7:0] char;
-	logic RXdone;
-	logic resetTrigger;
-	UARTRX receiveChar(clk,PLLclk,RX,loadStart,char,RXdone);
-	shift3rst receiveCtr(loadStart,RXdone,resetTrigger,loadComplete);
-	always_ff @(posedge RXdone)
+	logic[15:0]idle;
+	logic shiftSig;
+	UARTRX receiveChar(clk,PLLclk,RX,loadStart,char,RXdone,sampler);
+	pulse receivedChar(clk,RXdone,shiftSig);
+	shift16 samplerIdle(sampler,PLLclk,idle);
+	assign loadComplete = loadStart & idle[15] & ~(|idle[14:0]);
+	always_ff @(posedge shiftSig)
 		begin
 			if(loadStart) {lmotor,rmotor,dur}={rmotor,dur,char};
 		end
-	flop #(1) loadCompleteDelay(clk,loadComplete,resetTrigger);
 endmodule
 
 module executeCommand(input logic clk,
@@ -124,15 +138,16 @@ module UARTRX(input logic clk,PLLclk,
 			  input logic RX,
 			  input logic loadStart,
 			  output logic[7:0] char,
-			  output logic done);
+			  output logic done,UART);
 	//UART RX Pin
 	logic[3:0] validCheck;
 	logic valid;
 	logic UARTclk;
-	logic[1:0] stopBits;
+	logic stopBit;
 	logic resetTrigger;
 	logic startBit;
 	logic loadStartDelayed,doneDelayed;
+	assign UART = UARTclk;
 	
 	always_ff @(posedge clk,posedge done)
 		begin
@@ -143,10 +158,10 @@ module UARTRX(input logic clk,PLLclk,
 	slowclk baudrate(PLLclk,valid,UARTclk);
 	always_ff @(posedge UARTclk,posedge resetTrigger)
 		begin
-			if(resetTrigger) {done,startBit,char,stopBits} = 12'h001;
-			else {done,startBit,char,stopBits}={startBit,char,stopBits,RX}; //this is an 12-bit shift register	
+			if(resetTrigger) {done,startBit,char,stopBit} = 11'h001;
+			else {done,startBit,char,stopBit}={startBit,char,stopBit,RX}; //this is an 12-bit shift register	
 		end
-	delay #(1) doneDelay(clk,done,doneDelayed);
+	delay2 #(1) doneDelay(clk,done,doneDelayed);
 	delay #(1) loadStartDelay(clk,loadStart,loadStartDelayed);
 	assign resetTrigger = doneDelayed | (~loadStartDelayed & loadStart);
 endmodule
@@ -186,22 +201,23 @@ module durcheck #(parameter WIDTH=30)
 endmodule
 
 module shift3rst(input logic in,clk,reset,
-			  output logic out);
+			  output logic[2:0] out);
 	//3-register shift register with reset
-	logic d1,d2;
+	logic c,d,e;
 	always_ff @(posedge clk,posedge reset)
 		if(reset)
 			begin
-				d1 <=0;
-				d2 <=0;
-				out <=0;
+				c <=0;
+				d <=0;
+				e <=0;
 			end
 		else
 			begin
-				d1<=in;
-				d2<=d1;
-				out<=d2;
+				c<=in;
+				d<=c;
+				e<=d;
 			end
+	assign out = {e,d,c};
 endmodule
 
 module shift4(input logic in,clk,
@@ -213,6 +229,15 @@ module shift4(input logic in,clk,
 			out[1]<=out[0];
 			out[2]<=out[1];
 			out[3]<=out[2];
+		end
+endmodule
+
+module shift16(input logic in,clk,
+			  output logic[15:0] out);
+	//4-register shift register, outputs all shifted bits		  
+	always_ff @(posedge clk)
+		begin
+			out <= {out[14:0],in};
 		end
 endmodule
 
@@ -264,7 +289,18 @@ module flop #(parameter WIDTH=1)
 		begin
 			q <= d;
 		end
-endmodule 
+endmodule
+
+module flopen #(parameter WIDTH=1)
+				 (input logic clk,en,
+				  input logic [WIDTH-1:0] d,
+				  output logic [WIDTH-1:0] q);
+	always_ff @(posedge clk)
+		begin
+			if(en) q <= d;
+			else   q <= q;
+		end
+endmodule
 
 module delay #(parameter WIDTH=1)
 				 (input logic clk,
@@ -279,6 +315,20 @@ module delay #(parameter WIDTH=1)
 		end
 endmodule 
 
+module delay2 #(parameter WIDTH=1)
+				 (input logic clk,
+				  input logic [WIDTH-1:0] d,
+				  output logic [WIDTH-1:0] q);
+				  
+	logic[WIDTH-1:0] p1,p2;
+	always_ff @(posedge clk)
+		begin
+			p1 <= d;
+			p2 <= p1;
+			q <= p2;
+		end
+endmodule 
+
 module pulse(input logic clk,in,
 				 output logic out);
 	//creates a pulse when the input signal goes high
@@ -287,31 +337,3 @@ module pulse(input logic clk,in,
 	assign out = in & ~ delayed;
 endmodule
 
-
-module Testbench();
-
-	//TEST: sendAck
-	//standalone module verified: 12/5 @ 00:53
-	//logic needed
-	logic pllclk;
-	logic ackStart;
-	logic ackSent;
-	logic TX;
-	sendAck dut(pllclk,ackStart,ackSent,TX);
-	
-	always
-		begin
-			pllclk <=1; #10; pllclk <=0; #10;
-		end
-	
-	initial
-		begin
-			assign ackStart = 0;
-			#203;
-			assign ackStart = 1;
-			#2200;
-			assign ackStart = 0;
-			#200;
-		end
-
-endmodule
