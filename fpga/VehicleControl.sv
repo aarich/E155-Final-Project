@@ -1,33 +1,36 @@
+//Aaron Rosen and Alex Rich
+//E155 Final Project
+
 module VehicleControl(input logic clk,
 							 input logic RX,
 							 output logic TX,
-							 output logic HbridgeEN,
 							 output logic[1:0] HL,HR,
+							 output logic HbridgeEN,
+							 output logic[2:0] state,
 							 output logic[7:0] char,
-							 output logic sampler,loadComplete,loadStart,RXdone);
+							 output logic sampler,loadComplete,loadStart,RXdone,ackSent);
 				
 		//top level module
 		logic[7:0] lmotor,rmotor,dur;
 		//logic loadStart,loadComplete;
 		logic executeStart,executeComplete; //executeStart should pulse when starting rather than staying high
-		logic ackStart,ackSent;
+		logic ackStart;
 		logic pllclk;
 		logic reset,locked;
 		logic[1:0] HLled,HRled;
-		logic[2:0] state;
 		
 		assign HbridgeEN = 1;
 		assign HLled = HL;
 		assign HRled = HR;
 		assign char = lmotor;
 		
-		PLLclk2 pll(reset,clk,pllclk,locked);
+		PLLclk2 pll(reset,clk,pllclk,locked); //sampler/UART clk
 		
 		controller control(clk,loadComplete,executeComplete,ackSent,loadStart,executeStart,ackStart,state); //datapath controller
 		
-		receiveMSG RXin(clk,pllclk,RX,loadStart,lmotor,rmotor,dur,loadComplete,sampler,RXdone);
-		executeCommand executor(clk,(loadComplete | executeStart),(~executeComplete & loadStart),lmotor,rmotor,dur,executeComplete,HL,HR);
-		sendAck TXout(pllclk,ackStart,ackSent,TX);
+		receiveMSG RXin(clk,pllclk,RX,loadStart,lmotor,rmotor,dur,loadComplete,sampler,RXdone); //UART msg Receive
+		executeCommand executor(clk,(loadComplete | executeStart),(~executeComplete & loadStart),lmotor,rmotor,dur,executeComplete,HL,HR); //powertrain control
+		sendAck TXout(pllclk,ackStart,ackSent,TX); //UART msg transmit
 		
 endmodule
 
@@ -128,7 +131,7 @@ module UARTTX(input logic clk,
 		end
 	assign TX = msg[0];
 	timeren #(4) bitCount(clk2,resetTrigger,ackStart,count);
-	assign msgSent = (count == 11) & ackStart; //message send high after 11th bit sent
+	assign msgSent = (count == 4'hB) & ackStart; //message send high after 11th bit sent
 	delay #(1) resetSig(clk,(msgSent|ackStartPulse),resetTrigger);
 	pulse ackPulse(clk,ackStart,ackStartPulse);
 	
@@ -161,7 +164,7 @@ module UARTRX(input logic clk,PLLclk,
 			if(resetTrigger) {done,startBit,char,stopBit} = 11'h001;
 			else {done,startBit,char,stopBit}={startBit,char,stopBit,RX}; //this is an 12-bit shift register	
 		end
-	delay2 #(1) doneDelay(clk,done,doneDelayed);
+	delay2 #(1) doneDelay(PLLclk,done,doneDelayed);
 	delay #(1) loadStartDelay(clk,loadStart,loadStartDelayed);
 	assign resetTrigger = doneDelayed | (~loadStartDelayed & loadStart);
 endmodule
