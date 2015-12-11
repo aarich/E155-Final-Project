@@ -1,4 +1,3 @@
-
 \documentclass[12pt]{article}
 \usepackage[english]{babel}
 \usepackage[utf8x]{inputenc}
@@ -33,40 +32,40 @@
 
 
 \textsc{\LARGE Harvey Mudd College}\\[1.5cm] % Name of your university/college
-\textsc{\large Engineering 102}\\[0.5cm] % Minor heading such as course title
-\textsc{\Large Advanced Systems Engineering}\\[0.5cm]  % Major heading such as course name
+\textsc{\large Engineering 155}\\[0.3cm] % Minor heading such as course title
+\textsc{\Large Microprocessor Systems: Design and Application}\\[0.5cm]  % Major heading such as course name
 
-\HRule \\[0.4cm]
-{ \huge \bfseries State Space Design of an Inverted Pendulum Controller}\\[0.4cm] % Title of your document
+\HRule \\[0.1cm]
+{ \huge \bfseries Internet-Controlled AGV}\\[0.1cm] % Title of your document
 \HRule \\[1.5cm]
  
 
 \begin{minipage}{0.4\textwidth}
 \begin{flushleft} \large
-\emph{Author:}\\
+\emph{Authors:}\\
 Aaron \textsc{Rosen}
 
+Alex \textsc{Rich}
 \end{flushleft}
 \end{minipage}
 ~
 \begin{minipage}{0.4\textwidth}
 \begin{flushright} \large
 \emph{Professors:} \\
-John \textsc{Molinder} % Professor's Name
+David \textsc{Harris} % Professor's Name
 
-Qimin \textsc{Yang}
-
-Philip \textsc{Cha}
+Matthew \textsc{Spencer}
 \end{flushright}
 \end{minipage}\\[1cm]
 
 
 
-{\large Due: May 15, 2015}\\[1cm] 
+{\large December 11, 2015}\\[1cm] 
 
 
-
-\includegraphics[scale=0.75]{PendulumPic.jpg} 
+\begin{abstract}
+%THIS NEEDS TO BE COMPLETED WHEN EVERYTHING IS DONE
+\end{abstract}
 
 \vfill % Fill the rest of the page with whitespace
 
@@ -74,9 +73,6 @@ Philip \textsc{Cha}
 
 
 
-%\begin{abstract}
-%THIS NEEDS TO BE COMPLETED WHEN EVERYTHING IS DONE
-%\end{abstract}
 
 %\newpage
 %
@@ -89,52 +85,93 @@ Philip \textsc{Cha}
 %       INTRODUCTION
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
-%--------------------------------------------------------------------------------------
-A cart with an attached inverted pendulum of length 0.5 meters is to be translated from a start point to an end point one meter away within ten seconds.    The pendulum of the cart is subject to an angular acceleration disturbance $\alpha(t)=0.5 rad/s^2$.  The constraints on the system are that the system may not overshoot the final position, that the cart is limited to a maximum acceleration of $0.5m/s^2$ in either direction, and that the pendulum must remain inverted.\\
-To begin the process of designing the control system, the equations are first linearized using the small angle approximation.  The linearized equations can then be rearranged into state space form.  Through a transformation of the state matrix into controllable canonical form and observable canonical form, it can be seen that the system is fully controllable and observable.  This is concluded because the number of rows/columns in the state matrix is equivalent to the rank of the controllable canonical form matrix and the observable canonical form matrix.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%       State Space Design of a Linear Controller for a Linearized Plant
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{State Space Design of a Linear Controller for a Linearized Plant}
-%--------------------------------------------------------------------------------------
-In order to determine the preliminary pole placements, it is necessary to first consider the constraints on the system.  Because the system should not have any overshoot, it must be similar to the equivalent of a 2nd order highly damped system.  Because the system has five poles, it is significantly easier to approximate this by creating a set of nearly critically damped dominant poles and place the other poles further out.  For the observer, it is necessary to have a much faster response time, so the poles are placed much further away from the origin relative to the controller's poles.
+\begin{figure}[b!]
+\begin{center}
+\includegraphics[width=0.7\textwidth]{E155System}
+\end{center}
+\caption{An overview of the system. The system is comprised of two major subsystems: the Raspberry Pi 2 controller and the vehicle, which is controlled by the $\mu$Mudd board.}
+\label{fig:sys}
+\end{figure}
 
+The Internet-Controlled Autonomous Ground Vehicle is a treaded chassis that holds an FPGA with bluetooth listening capabilities. A companion website allows a user to interact with the vehicle by commanding it to travel it to various places. The motivation behind this project was to build a tank that could navigate within a map and shoot NERF darts. By building a tank that is remotely controlled over the internet, the more difficult part of this concept is realized.
 
-%--------------------------------------------------------------------------------------
-\section{Simulation of Control of Nonlinear Plant with the Linear Controller}
-%--------------------------------------------------------------------------------------
-In order to simulate the plant, a Simulink model was constructed following the diagrams on the E102 Final Project sheet.  The gains were input into the model and the system's output computed.  At first, the response was much too slow.  Furthermore, because of a bug in the code, the overshoot was massive, as the system was not stable.  Prior to discovery of the bug, the strategy was to reduce the response time in order to prevent the control signal from saturating.  This led to very slow times that made it difficult to determine the source of the bug (a negative sign that should not have been present in the integral gain).  Upon discovery of the bug, the system's dominant poles were moved back away from the imaginary axis to decrease the response time until the system was within specifications.  After the system was within specifications, the disturbance was increased to test the resilience of the system to disturbances.  The largest disturbance for which the system remained stable was $0.5375rad/s^2$.
+The project involved an FPGA 
 
+\section{New Hardware}
+\subsection{BlueSMiRF}
+\subsection{Vehicle}
+\section{Schematics}
+Alex
+\section{Raspberry Pi}
 
-\includegraphics[scale=0.30]{SystemResponse.jpg} 
+The Raspberry Pi 2 serves several functions. It hosts an Apache2 website accessible via the internet and contains code to submit commands to a bluetooth dongle. These two functions are integrated such that a user interacts with the website, indirectly sending commands over bluetooth. Figure \ref{fig:piroutines} show the flow of data and control through the Pi.
 
-%--------------------------------------------------------------------------------------
-\section{Discussion and Conclusion}
-It was noted that the overshoot constraint limited the speed at which the cart could move to the target position, as the system could not oscillate to slow down without dropping the pendulum.  Furthermore, it was noted that as the magnitude of the disturbance was increased, the clipping of the acceleration signal increased slowly, and then as the system reached the maximum allowable disturbance, the clipping began to increase dramatically until the system was no longer stable.  It should also be noted that the disturbance causes the pendulum to have a new equilibrium point; the larger the disturbance, the farther from the original equilibrium point the new equilibrium point moves.
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.8\textwidth]{PiRoutines}
+\end{center}
+\caption{The flow of control and data through the Pi.}
+\label{fig:piroutines}
+\end{figure}
 
+\subsection{Website}
 
+The website contains a visual user interface that contains instructions for use, a grid on which to input locations for the robot to maneuver to, a list of the commands currently buffered for sending. The code for the website is shown in Appendix A. The website was built using HTML, JavaScript, and Bootstrap CSS. 
 
-%--------------------------------------------------------------------------------------
-\newpage
-\section{Appendix}
-%--------------------------------------------------------------------------------------
-\subsection{Matlab Code}
-\lstinputlisting[language=Matlab]{E102FinalProjectCode.m}
+The Pi hosts the website. Upon clicking in a grid space, the page's JavaScript calculates the left and right tread speeds and duration of movement required to get the tank to move from its original position to the new position. The current algorithm involves first moving north/south, turning, moving east/west, and finally turning to reorient itself vertically. Once the commands are generated, the JavaScript makes an HTTP GET request to the inputChars resource of the Pi. When the request is completed, the page updates, either submitting the next command in the buffer or waiting for another input from the user.
 
-\subsection{Simulink Models}
-\includegraphics[scale=0.6]{OverallModel.jpg} \\
-\includegraphics[scale=0.6]{InvertedPendulumCart.jpg} \\
-\includegraphics[scale=0.6]{Observer.jpg} 
-\vfill
+\subsection{Python/C}
+After receiving a GET request, the common gateway interface (CGI) reads the input parameters (three integers) and converts them into a format that the vehicle understands. This involves converting the numbers to sign/magnitude bit representations. Because of how the UART works, the C also reverses the bits.
 
+calls a Python script. The Python script utilizes the \verb.bluetooth. module to allow sending data using the bluetooth dongle. Since the robot has a constant bluetooth device address, this address is hard coded into the Python script. When called, the python script sends the commands, one at a time, to the robot. Currently, the system sleeps for an amount of time to theoretically give the vehicle enough time to move. However, in the future, the Pi will wait for acknowledgement from the FPGA. The code on the Pi is shown in Appendix B. 
+
+{\it // Depending on room, I can include the code used to call Python, since that seemed to be a common problem.}
+
+\section{FPGA Design}
+Aaron
+\section{Results}
+\section{References}
+\renewcommand{\refname}{}
+\vspace{-1cm}
 \begin{thebibliography}{widest entry}
-
  \bibitem{E102}
- \label{E102} "E102 Final Project," P. Cha et. al., Web. May. 2015.
-
+REFERENCES?
 \end{thebibliography}
+\section{Parts List}
+This is the bill of materials for the project.
+\begin{center}
+\begin{tabular}{|l|l|l|l|}
+\hline
+\multicolumn{1}{|c|}{\textbf{Item}} & \multicolumn{1}{c|}{\textbf{Description}}               	& \multicolumn{1}{c|}{\textbf{Source}} & \multicolumn{1}{c|}{\textbf{Cost}} \\ \hline
+Tracked Vehicle 			&										&							&	\\
+			Chassis Kit	& Chassis for the tank, includes treads and frame.    	& Amazon 					& 15.39                          	\\ \hline
+Tamiya 70168				& Gives tank flexibility to turn by controlling each     	& 							& \\
+Double Gearbox			& tread independently.						& Amazon		               			& 11.99                             	\\ \hline
+$\mu$Mudd Board                	& Controls the vehicle.                                                & E155                                 		& 0.00                               	\\ \hline
+			                      	& Provides website interface and sends commands 	&							&\\
+Raspberry Pi 2			    	& to vehicle.             							& E155                                 		& 0.00                               	\\ \hline
+                        				& Wirelessly communicate via Bluetooth between  	&							&\\
+BlueSMiRF				& Pi and $\mu$Mudd board.		 			& E155                                		& 0.00                               	\\ \hline
+Belkin Components			&										&							&					\\ 
+FT8001					& Send bluetooth data from Pi.					& E155                                		& 0.00                               	\\ \hline
+2X TrustFire 14500			& Li Ion battery, 3.7 V 						& Aaron Rosen					& 0.00				\\ \hline
+						& 										& 							& {\bf 27.38}			\\ \hline
+\end{tabular}
+\end{center}
 
-\vfill
+
+\section{Appendices}
+
+
+%--------------------------------------------------------------------------------------
+%
+%\begin{thebibliography}{widest entry}
+%
+% \bibitem{E102}
+%"E102 Final Project," P. Cha et. al., Web. May. 2015.
+%
+%\end{thebibliography}
+%
 
 \end{document}
