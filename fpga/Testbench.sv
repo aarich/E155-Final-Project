@@ -1,6 +1,6 @@
 //Aaron Rosen
 //MicroPs Final Project Testbench
-
+/*
 module Testbench();
 
 	
@@ -49,7 +49,7 @@ module Testbench();
 			ackSent<=1;
 		end
 */	
-
+/*
 	//TEST: receiveMSG
 	//standalone module verified: 11/21 @23:07
 	//logic needed:
@@ -151,4 +151,72 @@ module Testbench();
 			#17600;
 			#100000;
 		end
+	*/
+	/*	
+	//TEST: executeCommand
+	//standalone module verified: 12/01 @20:33
+	//Note: durCheck must be modified to #(15) to simulate in a reasonable timeframe
+	//logic needed
+	logic clk;
+	logic resetDur,presetDur;
+	logic [7:0] lmotor,rmotor,dur;
+	logic executeComplete;
+	logic [1:0] HL,HR;
+	executeCommand dut(clk,resetDur,presetDur,lmotor,rmotor,dur,executeComplete,HL,HR);
+	
+	always
+		begin
+			clk <=1; #10; clk <=0; #10;
+		end
+	
+	initial
+		begin
+			assign resetDur = 0;
+			assign dur = 8'hAD;
+			#23;
+			assign presetDur = 1;
+			assign lmotor = 8'h7F;
+			assign rmotor = 8'h8F;
+			#100;
+			assign presetDur=0;
+			assign resetDur=1;
+			#100;
+			assign resetDur=0;
+			#1000000;
+			assign dur = 8'h0E;
+			assign lmotor = 8'hB3;
+			assign rmotor = 8'h05;
+			assign resetDur=1;
+			#100;
+			assign resetDur=0;
+			#100000;
+		end
+		
+		
+	//TEST: sendAck
+	//standalone module verified: 12/5 @ 00:53
+	//logic needed
+	logic pllclk;
+	logic ackStart;
+	logic ackSent;
+	logic TX;
+	sendAck dut(pllclk,ackStart,ackSent,TX);
+	
+	always
+		begin
+			pllclk <=1; #10; pllclk <=0; #10;
+		end
+	
+	initial
+		begin
+			assign ackStart = 0;
+			#203;
+			assign ackStart = 1;
+			#2200;
+			assign ackStart = 0;
+			#200;
+		end
+
+
 endmodule
+*/
