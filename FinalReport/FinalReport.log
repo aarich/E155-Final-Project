@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.4-1.40.13 (TeX Live 2012) (format=pdflatex 2012.6.30)  10 DEC 2015 19:40
+This is pdfTeX, Version 3.1415926-2.4-1.40.13 (TeX Live 2012) (format=pdflatex 2012.6.30)  10 DEC 2015 20:23
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -696,7 +696,11 @@ File: lstlang2.sty 2004/09/05 1.3 listings language file
 (/usr/local/texlive/2012/texmf-dist/tex/latex/listings/lstlang3.sty
 File: lstlang3.sty 2004/09/05 1.3 listings language file
 )
-(./FinalReport.aux)
+(./FinalReport.aux
+
+LaTeX Warning: Label `fig:piroutines' multiply defined.
+
+)
 \openout1 = `FinalReport.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 25.
@@ -713,8 +717,7 @@ LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 25.
 LaTeX Font Info:    ... okay on input line 25.
 LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 25.
 LaTeX Font Info:    ... okay on input line 25.
-
-(/usr/local/texlive/2012/texmf-dist/tex/latex/ucs/ucsencs.def
+ (/usr/local/texlive/2012/texmf-dist/tex/latex/ucs/ucsencs.def
 File: ucsencs.def 2011/01/21 Fixes to fontencodings LGR, T3
 )
 (/usr/local/texlive/2012/texmf-dist/tex/context/base/supp-pdf.mkii
@@ -787,57 +790,312 @@ LaTeX Info: Redefining \nameref on input line 25.
  [1
 
 {/usr/local/texlive/2012/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-<E155System.png, id=69, 443.6575pt x 343.2825pt>
+<E155System.png, id=73, 443.6575pt x 343.2825pt>
 File: E155System.png Graphic file (type png)
  <use E155System.png>
 Package pdftex.def Info: E155System.png used on input line 91.
 (pdftex.def)             Requested size: 328.82707pt x 254.42839pt.
+
+<breadboard.png, id=75, 474.77374pt x 468.75125pt>
+File: breadboard.png Graphic file (type png)
+ <use breadboard.png>
+Package pdftex.def Info: breadboard.png used on input line 108.
+(pdftex.def)             Requested size: 328.82707pt x 324.66895pt.
 pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has 
 been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.109 
-       [1 <./E155System.png>] <PiRoutines.png, id=78, 624.3325pt x 463.7325pt>
+l.117 
+       [1 <./E155System.png>] [2 <./breadboard.png>]
+<PiRoutines.png, id=89, 624.3325pt x 463.7325pt>
 File: PiRoutines.png Graphic file (type png)
-
-<use PiRoutines.png>
-Package pdftex.def Info: PiRoutines.png used on input line 112.
+ <use PiRoutines.png>
+Package pdftex.def Info: PiRoutines.png used on input line 120.
 (pdftex.def)             Requested size: 375.80544pt x 279.14029pt.
- [2 <./PiRoutines.png>]
-Overfull \hbox (25.07825pt too wide) in paragraph at lines 144--161
+ [3 <./PiRoutines.png>] [4] <FPGABlock.png, id=102, 591.6504pt x 398.9304pt>
+File: FPGABlock.png Graphic file (type png)
+
+<use FPGABlock.png>
+Package pdftex.def Info: FPGABlock.png used on input line 153.
+(pdftex.def)             Requested size: 375.80544pt x 253.40321pt.
+ [5 <./FPGABlock.png>]
+Overfull \hbox (25.07825pt too wide) in paragraph at lines 170--187
  [] 
  []
 
-[3]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 177.
- [4]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 177.
+(./VehicleControl.sv
+Overfull \hbox (3.5797pt too wide) in paragraph at lines 11--13
+[][] 
+ []
+
+[6]
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 32.
+ (/usr/local/texlive/2012/texmf-dist/tex/latex/base/omscmr.fd
+File: omscmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
+)
+LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10.95> not available
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 32.
+ [7]
+LaTeX Font Info:    Try loading font information for OML+cmr on input line 53.
+
+(/usr/local/texlive/2012/texmf-dist/tex/latex/base/omlcmr.fd
+File: omlcmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
+)
+LaTeX Font Info:    Font shape `OML/cmr/m/n' in size <10.95> not available
+(Font)              Font shape `OML/cmm/m/it' tried instead on input line 53.
+
+Overfull \hbox (49.57018pt too wide) in paragraph at lines 53--54
+[][] 
+ []
+
+
+Overfull \hbox (16.71983pt too wide) in paragraph at lines 53--54
+[][] 
+ []
+
+
+Overfull \hbox (23.2899pt too wide) in paragraph at lines 53--54
+[][] 
+ []
+
+
+Overfull \hbox (3.5797pt too wide) in paragraph at lines 53--54
+[][] 
+ []
+
+
+Overfull \hbox (3.5797pt too wide) in paragraph at lines 53--54
+[][] 
+ []
+
+
+Overfull \hbox (16.71983pt too wide) in paragraph at lines 53--54
+[][] 
+ []
+
+
+Overfull \hbox (16.71983pt too wide) in paragraph at lines 53--54
+[][] 
+ []
+
+
+Overfull \hbox (23.2899pt too wide) in paragraph at lines 54--55
+[][] 
+ []
+
+
+Overfull \hbox (23.2899pt too wide) in paragraph at lines 54--55
+[][] 
+ []
+
+
+Overfull \hbox (23.2899pt too wide) in paragraph at lines 54--55
+[][] 
+ []
+
+
+Overfull \hbox (23.2899pt too wide) in paragraph at lines 54--55
+[][] 
+ []
+
+
+Overfull \hbox (23.2899pt too wide) in paragraph at lines 54--55
+[][] 
+ []
+
+
+Overfull \hbox (3.5797pt too wide) in paragraph at lines 54--55
+[][] 
+ []
+
+
+Overfull \hbox (3.5797pt too wide) in paragraph at lines 54--55
+[][] 
+ []
+
+
+Overfull \hbox (16.71983pt too wide) in paragraph at lines 54--55
+[][] 
+ []
+
+
+Overfull \hbox (69.28038pt too wide) in paragraph at lines 57--58
+[][] 
+ []
+
+
+Overfull \hbox (3.5797pt too wide) in paragraph at lines 57--58
+[][] 
+ []
+
+
+Overfull \hbox (3.5797pt too wide) in paragraph at lines 57--58
+[][] 
+ []
+
+
+Overfull \hbox (16.71983pt too wide) in paragraph at lines 57--58
+[][] 
+ []
+
+[8]
+Overfull \hbox (23.2899pt too wide) in paragraph at lines 58--59
+[][] 
+ []
+
+
+Overfull \hbox (23.2899pt too wide) in paragraph at lines 58--59
+[][] 
+ []
+
+
+Overfull \hbox (23.2899pt too wide) in paragraph at lines 58--59
+[][] 
+ []
+
+
+Overfull \hbox (23.2899pt too wide) in paragraph at lines 58--59
+[][] 
+ []
+
+
+Overfull \hbox (23.2899pt too wide) in paragraph at lines 58--59
+[][] 
+ []
+
+
+Overfull \hbox (3.5797pt too wide) in paragraph at lines 58--59
+[][] 
+ []
+
+
+Overfull \hbox (3.5797pt too wide) in paragraph at lines 58--59
+[][] 
+ []
+
+
+Overfull \hbox (16.71983pt too wide) in paragraph at lines 58--59
+[][] 
+ []
+
+
+Overfull \hbox (16.71983pt too wide) in paragraph at lines 58--59
+[][] 
+ []
+
+
+Overfull \hbox (16.71983pt too wide) in paragraph at lines 61--62
+[][] 
+ []
+
+
+Overfull \hbox (23.2899pt too wide) in paragraph at lines 61--62
+[][] 
+ []
+
+
+Overfull \hbox (23.2899pt too wide) in paragraph at lines 61--62
+[][] 
+ []
+
+
+Overfull \hbox (3.5797pt too wide) in paragraph at lines 61--62
+[][] 
+ []
+
+
+Overfull \hbox (3.5797pt too wide) in paragraph at lines 61--62
+[][] 
+ []
+
+
+Overfull \hbox (16.71983pt too wide) in paragraph at lines 61--62
+[][] 
+ []
+
+
+Overfull \hbox (23.2899pt too wide) in paragraph at lines 62--63
+[][] 
+ []
+
+
+Overfull \hbox (23.2899pt too wide) in paragraph at lines 62--63
+[][] 
+ []
+
+
+Overfull \hbox (23.2899pt too wide) in paragraph at lines 62--63
+[][] 
+ []
+
+
+Overfull \hbox (23.2899pt too wide) in paragraph at lines 62--63
+[][] 
+ []
+
+
+Overfull \hbox (23.2899pt too wide) in paragraph at lines 62--63
+[][] 
+ []
+
+
+Overfull \hbox (3.5797pt too wide) in paragraph at lines 62--63
+[][] 
+ []
+
+
+Overfull \hbox (3.5797pt too wide) in paragraph at lines 62--63
+[][] 
+ []
+
+
+Overfull \hbox (16.71983pt too wide) in paragraph at lines 62--63
+[][] 
+ []
+
+[9] [10]
+Overfull \hbox (23.2899pt too wide) in paragraph at lines 93--94
+[][] 
+ []
+
+[11] [12] [13] [14] [15])
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 194.
+ [16]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 194.
  (./FinalReport.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 177.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 177.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 194.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 194.
 Package rerunfilecheck Info: File `FinalReport.out' has not changed.
-(rerunfilecheck)             Checksum: FDF6CCBD70FC332D7F697FA9FFD7D632;640.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 177.
+(rerunfilecheck)             Checksum: E147619760385206358C608BA1D2DCB7;699.
+
+
+LaTeX Warning: There were multiply-defined labels.
+
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 194.
  ) 
 Here is how much of TeX's memory you used:
- 16885 strings out of 493488
- 295536 string characters out of 3141326
- 410923 words of memory out of 3000000
- 19836 multiletter control sequences out of 15000+200000
- 11849 words of font info for 42 fonts, out of 3000000 for 9000
+ 17866 strings out of 493488
+ 307620 string characters out of 3141326
+ 605923 words of memory out of 3000000
+ 20447 multiletter control sequences out of 15000+200000
+ 13035 words of font info for 46 fonts, out of 3000000 for 9000
  957 hyphenation exceptions out of 8191
- 63i,7n,72p,634b,406s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 63i,7n,72p,946b,2092s stack positions out of 5000i,500n,10000p,200000b,50000s
 </usr/local/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb
 ></usr/local/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb>
 </usr/local/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmcsc10.pfb>
-</usr/local/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb><
-/usr/local/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></u
-sr/local/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmti12.pfb></us
-r/local/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt12.pfb>
-Output written on FinalReport.pdf (5 pages, 130697 bytes).
+</usr/local/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb><
+/usr/local/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb></
+usr/local/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></us
+r/local/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/
+local/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/l
+ocal/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/lo
+cal/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmti12.pfb></usr/loc
+al/texlive/2012/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt12.pfb>
+Output written on FinalReport.pdf (17 pages, 385238 bytes).
 PDF statistics:
- 127 PDF objects out of 1000 (max. 8388607)
- 107 compressed objects within 2 object streams
- 22 named destinations out of 1000 (max. 500000)
- 127 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 624 PDF objects out of 1000 (max. 8388607)
+ 580 compressed objects within 6 object streams
+ 379 named destinations out of 1000 (max. 500000)
+ 145 words of extra memory for PDF output out of 10000 (max. 10000000)
 

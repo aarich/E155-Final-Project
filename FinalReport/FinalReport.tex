@@ -96,13 +96,21 @@ Matthew \textsc{Spencer}
 
 The Internet-Controlled Autonomous Ground Vehicle is a treaded chassis that holds an FPGA with bluetooth listening capabilities. A companion website allows a user to interact with the vehicle by commanding it to travel it to various places. The motivation behind this project was to build a tank that could navigate within a map and shoot NERF darts. By building a tank that is remotely controlled over the internet, the more difficult part of this concept is realized.
 
-The project involved an FPGA 
+The project involves a website hosted by Apache2 on the Raspberry Pi 2, which sends commands from the a bluetooth dongle to a bluetooth receiver (BlueSMiRF) that is connected to the FPGA. The FPGA drives two motors. Each component is described further in the following sections.
 
 \section{New Hardware}
 \subsection{BlueSMiRF}
 \subsection{Vehicle}
 \section{Schematics}
-Alex
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.7\textwidth]{breadboard}
+\end{center}
+\caption{The components on the breadboard. The H-Bridge Output are PWM signals.}
+\label{fig:piroutines}
+\end{figure}
+
 \section{Raspberry Pi}
 
 The Raspberry Pi 2 serves several functions. It hosts an Apache2 website accessible via the internet and contains code to submit commands to a bluetooth dongle. These two functions are integrated such that a user interacts with the website, indirectly sending commands over bluetooth. Figure \ref{fig:piroutines} show the flow of data and control through the Pi.
@@ -129,7 +137,25 @@ calls a Python script. The Python script utilizes the \verb.bluetooth. module to
 {\it // Depending on room, I can include the code used to call Python, since that seemed to be a common problem.}
 
 \section{FPGA Design}
-Aaron
+
+The FPGA reads data from the BlueSMiRF using UART hardware coded in SystemVerilog, processes and executes the command, and then sends an acknowledgment back to the Raspberry Pi.  It is constructed as a controller-datapath pair with three main submodules in the datapath - receiveMSG, executeCommand, and sendAck.  The SystemVerilog code installed on the FPGA is shown in Appendix C. The FPGA and BlueSMiRF are the only two electrical components on the breadboard. Two motors are connected to the $\mu$Mudd board's H-bridge screw terminals.  The schematic is shown in figure.
+
+The clock used to interface with the BlueSMiRF is implemented using a PLL that oversamples the 115.2 Kbaud UART frequency at 921.6kHz, or a factor of 8.  This oversampler determines if there is an incoming message.  The actual sampling of the BlueSMiRF's TX line is accomplished using a frequency divider that allows for sampling at the correct rate.  The divider's phase can be frozen when the start bit has not yet been detected.  This ensures that the sampling of the line is as close to the center of the transmission's clock as possible.  The Raspberry Pi sends three characters, which are flushed by the Bluetooth module's buffer at the same time, so the command appears as a 30-bit message.  The sampler stops sampling when it sees a stop bit, and either begins a new message if the next bit is a start bit, or signals to the controller that a command has been received of an entire command if the line has remained high.
+
+The FPGA executes the command received by controlling the two motors via the H-Bridges on the $\mu$Mudd board. Each command consists of a PWM setting and rotation direction for each motor and a duration for which the motors should be turning.  A counter is used to create a reference clock for PWM; the power levels are referenced against this counter to determine the correct duty cycle.  Multiplexers are used to route the power to the correct pins on the H-Bridge, allowing for both forward and backwards movement.  To prevent the vehicle from running indefinitely, the timer stops incrementing when the requested duration is reached, and a signal is output that is used to cut power to the motors.  Each LSb of the duration character corresponds to roughly one-tenth of a second.
+
+Once the requested duration has been reached and power to the motors cut, the FPGA transmits the character `A' back to the BlueSMiRF as an ACK code.  After this ACK has been sent, the FPGA will return to the receiveMSG state and start to sample for a new command.
+
+A flowchart detailing each state of the FPGA is shown in Figure \ref{fig:fpgablock}.
+
+\begin{figure}
+\begin{center}
+\includegraphics[width=0.8\textwidth]{FPGABlock}
+\end{center}
+\caption{Schematic overview of the FPGA.}
+\label{fig:fpgablock}
+\end{figure}
+
 \section{Results}
 \section{References}
 \renewcommand{\refname}{}
@@ -162,16 +188,7 @@ FT8001					& Send bluetooth data from Pi.					& E155                            
 
 
 \section{Appendices}
-
-
-%--------------------------------------------------------------------------------------
-%
-%\begin{thebibliography}{widest entry}
-%
-% \bibitem{E102}
-%"E102 Final Project," P. Cha et. al., Web. May. 2015.
-%
-%\end{thebibliography}
-%
+\subsection{FPGA Code}
+\lstinputlisting[language=Verilog]{VehicleControl.sv}
 
 \end{document}
