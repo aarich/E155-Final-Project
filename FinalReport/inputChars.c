@@ -1,6 +1,8 @@
 /**
  * inputChars.c
  * Alex Rich and Aaron Rosen
+ * arich@hmc.edu
+ * arosen@hmc.edu
  * E155 Final Project
  * Fall 2015
  *

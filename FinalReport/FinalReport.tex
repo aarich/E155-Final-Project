@@ -64,10 +64,10 @@ Matthew \textsc{Spencer}
 
 
 \begin{abstract}
-%THIS NEEDS TO BE COMPLETED WHEN EVERYTHING IS DONE
+The team builds an internet-controlled autonomous ground vehicle. The main parts of the project involve a Raspberry Pi 2 that hosts a website and sends data over bluetooth and an FPGA on which UART and driving logic is executed. The resulting system allows a user to interact with a website to command the tank to travel between locations.
 \end{abstract}
 
-\vfill % Fill the rest of the page with whitespace
+\vfill
 
 \end{titlepage}
 
@@ -143,7 +143,7 @@ The languages in use on the Pi are HTML, JavaScript, C, and Python.
 
 \subsection{Website}
 
-The website contains a visual user interface that contains instructions for use, a grid on which to input locations for the robot to maneuver to, a list of the commands currently buffered for sending. The code for the website is shown in Appendix \ref{sec:webcode}. The website was built using HTML, JavaScript, and Bootstrap CSS. 
+The website contains a visual user interface that contains instructions for use, a grid on which to input locations for the robot to maneuver to, a list of the commands currently buffered for sending. The resulting webpage is shown in Appendix \ref{sec:web}, along with the code in Appendix \ref{sec:webcode}. The website was built using HTML, JavaScript, and Bootstrap CSS. 
 
 The Pi hosts the website. Upon clicking in a grid space, the page's JavaScript calculates the left and right tread speeds and duration of movement required to get the tank to move from its original position to the new position. The current algorithm involves first moving north/south, turning, moving east/west, and finally turning to reorient itself vertically. Once the commands are generated, the JavaScript makes an HTTP GET request to the inputChars resource of the Pi. When the request is completed, the page updates, either submitting the next command in the buffer or waiting for another input from the user.
 
@@ -244,6 +244,13 @@ LM 7805 CT				& 5V Regulator						& Stockroom					& 0.00				\\ \hline
 
 
 \section{Appendices}
+
+\subsection{The Website}
+\label{sec:web}
+
+\includegraphics[width=\textwidth]{website}
+
+
 \subsection{FPGA Diagrams}
 \subsubsection{Controller}
 \begin{center}

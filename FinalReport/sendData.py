@@ -1,10 +1,14 @@
 # sendData.py
 # 
 # Alex Rich and Aaron Rosen
+# arich@hmc.edu
+# arosen@hmc.edu
 # E155 Final Project
 # Fall 2015
 #
-# This script is called with three commands: l, r, and t.
+# This script is called with three commands: l, r, and t, 
+# which it passes onto the bluetooth dongle to the 
+# hardcoded address stored in bd_addr.
 
  from bluetooth import *
 import sys
