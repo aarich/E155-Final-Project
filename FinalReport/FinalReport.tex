@@ -1,0 +1,140 @@
+
+\documentclass[12pt]{article}
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage{epstopdf}
+\usepackage[margin=1.0in]{geometry}
+\usepackage{hyperref}
+
+% Source code formating
+\usepackage{listings}
+\lstset{ 
+ %frame=single,
+ language=Verilog,
+ %numbers=left,
+ breaklines=true,
+  basicstyle=\small, %or \small or \footnotesize etc.
+ title=\lstname
+}
+
+
+\begin{document}
+
+\begin{titlepage}
+
+\newcommand{\HRule}{\rule{\linewidth}{0.5mm}} % Defines a new command for the horizontal lines, change thickness here
+
+\center % Center everything on the page
+
+
+\textsc{\LARGE Harvey Mudd College}\\[1.5cm] % Name of your university/college
+\textsc{\large Engineering 102}\\[0.5cm] % Minor heading such as course title
+\textsc{\Large Advanced Systems Engineering}\\[0.5cm]  % Major heading such as course name
+
+\HRule \\[0.4cm]
+{ \huge \bfseries State Space Design of an Inverted Pendulum Controller}\\[0.4cm] % Title of your document
+\HRule \\[1.5cm]
+ 
+
+\begin{minipage}{0.4\textwidth}
+\begin{flushleft} \large
+\emph{Author:}\\
+Aaron \textsc{Rosen}
+
+\end{flushleft}
+\end{minipage}
+~
+\begin{minipage}{0.4\textwidth}
+\begin{flushright} \large
+\emph{Professors:} \\
+John \textsc{Molinder} % Professor's Name
+
+Qimin \textsc{Yang}
+
+Philip \textsc{Cha}
+\end{flushright}
+\end{minipage}\\[1cm]
+
+
+
+{\large Due: May 15, 2015}\\[1cm] 
+
+
+
+\includegraphics[scale=0.75]{PendulumPic.jpg} 
+
+\vfill % Fill the rest of the page with whitespace
+
+\end{titlepage}
+
+
+
+%\begin{abstract}
+%THIS NEEDS TO BE COMPLETED WHEN EVERYTHING IS DONE
+%\end{abstract}
+
+%\newpage
+%
+%{\footnotesize \tableofcontents}
+
+\newpage
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%       INTRODUCTION
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Introduction}
+%--------------------------------------------------------------------------------------
+A cart with an attached inverted pendulum of length 0.5 meters is to be translated from a start point to an end point one meter away within ten seconds.    The pendulum of the cart is subject to an angular acceleration disturbance $\alpha(t)=0.5 rad/s^2$.  The constraints on the system are that the system may not overshoot the final position, that the cart is limited to a maximum acceleration of $0.5m/s^2$ in either direction, and that the pendulum must remain inverted.\\
+To begin the process of designing the control system, the equations are first linearized using the small angle approximation.  The linearized equations can then be rearranged into state space form.  Through a transformation of the state matrix into controllable canonical form and observable canonical form, it can be seen that the system is fully controllable and observable.  This is concluded because the number of rows/columns in the state matrix is equivalent to the rank of the controllable canonical form matrix and the observable canonical form matrix.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%       State Space Design of a Linear Controller for a Linearized Plant
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{State Space Design of a Linear Controller for a Linearized Plant}
+%--------------------------------------------------------------------------------------
+In order to determine the preliminary pole placements, it is necessary to first consider the constraints on the system.  Because the system should not have any overshoot, it must be similar to the equivalent of a 2nd order highly damped system.  Because the system has five poles, it is significantly easier to approximate this by creating a set of nearly critically damped dominant poles and place the other poles further out.  For the observer, it is necessary to have a much faster response time, so the poles are placed much further away from the origin relative to the controller's poles.
+
+
+%--------------------------------------------------------------------------------------
+\section{Simulation of Control of Nonlinear Plant with the Linear Controller}
+%--------------------------------------------------------------------------------------
+In order to simulate the plant, a Simulink model was constructed following the diagrams on the E102 Final Project sheet.  The gains were input into the model and the system's output computed.  At first, the response was much too slow.  Furthermore, because of a bug in the code, the overshoot was massive, as the system was not stable.  Prior to discovery of the bug, the strategy was to reduce the response time in order to prevent the control signal from saturating.  This led to very slow times that made it difficult to determine the source of the bug (a negative sign that should not have been present in the integral gain).  Upon discovery of the bug, the system's dominant poles were moved back away from the imaginary axis to decrease the response time until the system was within specifications.  After the system was within specifications, the disturbance was increased to test the resilience of the system to disturbances.  The largest disturbance for which the system remained stable was $0.5375rad/s^2$.
+
+
+\includegraphics[scale=0.30]{SystemResponse.jpg} 
+
+%--------------------------------------------------------------------------------------
+\section{Discussion and Conclusion}
+It was noted that the overshoot constraint limited the speed at which the cart could move to the target position, as the system could not oscillate to slow down without dropping the pendulum.  Furthermore, it was noted that as the magnitude of the disturbance was increased, the clipping of the acceleration signal increased slowly, and then as the system reached the maximum allowable disturbance, the clipping began to increase dramatically until the system was no longer stable.  It should also be noted that the disturbance causes the pendulum to have a new equilibrium point; the larger the disturbance, the farther from the original equilibrium point the new equilibrium point moves.
+
+
+
+%--------------------------------------------------------------------------------------
+\newpage
+\section{Appendix}
+%--------------------------------------------------------------------------------------
+\subsection{Matlab Code}
+\lstinputlisting[language=Matlab]{E102FinalProjectCode.m}
+
+\subsection{Simulink Models}
+\includegraphics[scale=0.6]{OverallModel.jpg} \\
+\includegraphics[scale=0.6]{InvertedPendulumCart.jpg} \\
+\includegraphics[scale=0.6]{Observer.jpg} 
+\vfill
+
+\begin{thebibliography}{widest entry}
+
+ \bibitem{E102}
+ \label{E102} "E102 Final Project," P. Cha et. al., Web. May. 2015.
+
+\end{thebibliography}
+
+\vfill
+
+\end{document}
