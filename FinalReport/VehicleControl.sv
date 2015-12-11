@@ -1,5 +1,14 @@
 //Aaron Rosen and Alex Rich
+//arosen@hmc.edu, arich@hmc.edu
+//December 11, 2015
+//VehicleControl.sv
+//
 //E155 Final Project
+//This file is the FPGA code for the Vehicle.  It contains logic
+//to communicate with a BlueSMiRF with UART and logic to power motors
+//through an H-Bridge.
+
+
 
 module VehicleControl(input logic clk,
                       input logic RX,
@@ -24,6 +33,7 @@ module VehicleControl(input logic clk,
     assign HRled = HR;
     assign char = lmotor;
     
+    //NOTE: PLLclk2 is Altera IP generated using the ALTPLL Megafunction.  It generates a 921.6KHz clock signal.
     PLLclk2 pll(reset,clk,pllclk,locked); //sampler/UART clk
     
     controller control(clk,loadComplete,executeComplete,ackSent,loadStart,executeStart,ackStart,state); //datapath controller
