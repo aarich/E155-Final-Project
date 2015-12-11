@@ -1,0 +1,327 @@
+<!--
+ * final.html
+ * Alex Rich and Aaron Rosen
+ * E155 Final Project
+ * Fall 2015
+ *
+ * This webpage allows a user to interact with our AGV.
+-->
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>E155 Final Project</title>
+  <meta http-equiv="content-type" content="text-html;charset=utf-8">
+  <link rel="stylesheet" 
+    href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+  <script type="text/javascript" src="http://code.jquery.com/jquery.min.js"></script>
+  <style>
+    .grid { margin:1em auto; border-collapse:collapse }
+    .grid td {
+      cursor:pointer;
+      width:60px; height:60px;
+      border:1px solid #ccc;
+      text-align:center;
+      font-family:sans-serif; font-size:13px
+    }
+    .grid td.clicked {
+      background-color:yellow;
+      font-weight:bold; color:red;
+    }
+  </style>
+</head>
+<body>
+  <div id="bg"></div>
+  <div class="container">
+    <div class="jumbotron">
+      <h1>E155 Final Project</h1>
+      <p>Microprocessors at Harvey Mudd College, Fall 2015</p>
+      <p>Aaron Rosen and Alex Rich</p> 
+    </div>
+    <div class="row">
+      <div class="col-sm-4">
+        <div class="panel">
+          <h3>Send Command</h3>
+          <form action="cgi-bin/inputChars" method="GET">
+            <div class="form-group">
+              <label for="l">Left Power:</label>
+              <input type="text" class="form-control" 
+                name="l" placeholder="[-127, 127]">
+            </div>
+            <div class="form-group">
+              <label for="r">Right Power:</label>
+              <input type="text" class="form-control" 
+                name="r" placeholder="[-127, 127]">
+            </div>
+            <div class="form-group">
+              <label for="l">Time</label>
+              <input type="text" class="form-control" 
+                name="t" placeholder="1/10 seconds, [0, 255]">
+            </div>
+              <input type="submit" class="btn btn-default" 
+                value="Submit Command">
+            </form>
+          </div> <!-- </Send Command> -->
+          <div class="panel">
+            <h3>Settings</h3>
+            <button class="btn btn-default" onclick="resetSettings()">Reset Grid Size</button>
+            <button class="btn btn-default" onclick="getGridSize()">Update Grid Size</button>
+            <br>
+            <br>
+            <div class="row">
+              <div class="col-xs-6 col-md-4"></div>
+              <div class="col-xs-6 col-md-4 " style="text-align:center">            
+                <button class="btn btn-default" onclick="nudge({l:forwardSpeed, r:forwardSpeed, t:5})">Forward</button> 
+              </div>
+              <div class="col-xs-6 col-md-4"></div>
+            </div>
+            <div class="row">
+              <div class="col-xs-6 col-md-4" style="text-align:right">
+                <button class="btn btn-default" onclick="nudge({l:-turningSpeed, r:turningSpeed, t:2})">Left</button>
+              </div>
+              <div class="col-xs-6 col-md-4" style="text-align:center">
+                <h4>Nudge</h4>
+              </div>
+              <div class="col-xs-6 col-md-4" style="text-align:left">
+                <button class="btn btn-default" onclick="nudge({l:turningSpeed, r:-turningSpeed, t:2})">Right</button>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-xs-6 col-md-4"></div>
+              <div class="col-xs-6 col-md-4" style="text-align:center">
+                <button class="btn btn-default" onclick="nudge({l:-forwardSpeed, r:-forwardSpeed, t:5})">Backward</button>
+              </div>
+              <div class="col-xs-6 col-md-4"></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-4">
+          <div class="panel">
+            <h3 id="pac">Point and Click</h3>
+            <div id="g">
+              <!-- The grid ends up here. -->
+            </div>
+          </div>
+        </div>
+        <div class="col-sm-4">
+          <div class="panel">
+            <h3 id="commandListHeader">Commands</h3>  
+            <div id="commands"></div>      
+          </div>
+          <div class="panel">
+            <h3 id="resultsHeader">Results</h3>  
+            <div id="results"></div>      
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+<script>
+// calibrated time (in tenths of seconds) it takes to move from one square to the next.
+var forwardDur = 90;
+// calibrated time (in tenths of seconds) it takes to turn 90 degrees in either direction.
+var ninetyDur = 24; 
+// calibrated power level to move forward, [-127, 127]
+var forwardSpeed = 127;
+// calibrated power level to turn each tread when turning, [-127, 127]
+var turningSpeed = 127;
+
+// The command buffer queue
+var commandList = [];
+// Is the bot currently executing a command?
+var isExecuting = false;
+
+// The last clicked grid cell
+var lastClicked;
+var lastRow;
+var lastCol;
+// Creates the main grid.
+var grid = clickableGrid(5,5,function(el, row, col, i){
+
+  el.className = 'clicked';
+
+  if (el == lastClicked) return; // The tank doesn't need to move.
+  if (lastClicked) {
+    lastClicked.className = '';
+    pushCommands(row, col);
+  }
+  lastClicked = el;
+  lastRow = row;
+  lastCol = col;
+  executeCommand();
+})
+
+// Allows user to change the grid size
+function getGridSize() {
+  var newSize = prompt("Please enter the grid size", "90");
+  
+  if (newSize != null) {
+    forwardDur = newSize;
+  }
+}
+
+function resetSettings() {
+  forwardDur = 90;
+}
+
+// Given a command, this function adds it to the queue
+function nudge(command) {
+  commandList.push(command);
+  executeCommand();
+}
+
+// Pushes commands from lastRow, lastCol to newRow, newCol
+function pushCommands(newRow, newCol)
+{
+  var vDist = lastRow - newRow;
+
+  // Move up and down first.
+  if (vDist != 0) {
+    var power = forwardSpeed;
+    if (vDist < 0) power = -1 * power;
+    var totalTime = Math.abs(vDist * forwardDur);
+    if (totalTime > 255) {
+      while (totalTime > 255) {
+        commandList.push({l:power,r:0.85*power,t:255});
+        totalTime = totalTime - 255;
+      }
+    }
+    commandList.push({l:power, r:Math.floor(0.967*power), t:totalTime});
+  }
+
+  // Now we need to move left or right (if needed)
+  var hDist = lastCol - newCol;
+  if (hDist != 0) {
+    // First turn 90 degrees
+
+    // Set a positive tread and a negative tread:
+    var pPower = turningSpeed;
+    var nPower = -1 * turningSpeed;
+    commandList.push({l:nPower, r:pPower, t:ninetyDur});
+
+    var power = forwardSpeed;
+    if (hDist < 0) power = -1 * power;
+    var totalTime = Math.abs(hDist * forwardDur);
+    if (totalTime > 255) {
+      while (totalTime > 255) {
+        commandList.push({l:power,r:power,t:255});
+        totalTime = totalTime - 255;
+      }
+    }
+    commandList.push({l:power, r:power, t:totalTime});
+
+    // We're done. Turn back to face up and down (the treads are reverse this turn).
+    commandList.push({l:pPower, r:nPower, t:ninetyDur});
+  }
+}
+
+// Executes commands in the buffer. Will continue executing until buffer is empty.
+function executeCommand() {
+  // Display current commands on the webpage.
+  updateList();
+  if (commandList.length == 0) {
+    return;
+  } else if (isExecuting) {
+    // If we're currently executing a command, check back in 0.1 sec
+    setTimeout(function () {
+          executeCommand();
+      }, 100);
+    return;
+  }
+
+  // We are executing a command.
+  isExecuting = true
+
+  // Pop the last command off the buffer
+  var command = commandList.shift();
+  console.log("sending command: ");
+  console.log(commandToString(command));
+
+  // create a GET request to submit this command.
+  var xmlHttp = new XMLHttpRequest();
+  xmlHttp.onreadystatechange = function() { 
+    if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
+      // If the command is succesfful, we're done executing
+      isExecuting = false;
+
+      // Check if we need to execute anything else.
+      executeCommand();
+      document.getElementById('results').innerHTML = xmlHttp.responseText
+    } else if (xmlHttp.readyState == 4) {
+      // There was an error, put it in the header so it is noticed.
+      document.getElementById('pac').innerHTML = 
+        xmlHttp.status.toString().concat(": There was an error!");
+      document.getElementById('pac').style.color = 'red';
+      setTimeout(function () {
+          document.getElementById('pac').innerHTML = "Point and Click";
+          document.getElementById('pac').style.color = 'black';
+      }, 2000);
+    }
+  }
+
+  // Add parameters
+  var url = "cgi-bin/inputChars";
+  url = url.concat("?l=", command.l.toString(), "&r=", 
+    command.r.toString(), "&t=", command.t.toString());
+  xmlHttp.open("GET", url, true); // true for asynchronous 
+  xmlHttp.send(null);
+}
+
+// Writes the buffer to the page.
+function updateList() {
+  var str = "Current commands in buffer (in order of execution): <br>"
+  for(var i=0;i<commandList.length;i++){
+    str = str.concat((i+1).toString(), " -- ", 
+      commandToString(commandList[i]), "<br>");
+  }
+  str = str.concat("");
+  document.getElementById('commands').innerHTML = str;
+}
+
+// Easy printing of a command.
+function commandToString(command) {
+  var str = ""
+  str = str.concat("L: ", command.l.toString(), ", R: ", 
+    command.r.toString(), ", T: ", command.t.toString());
+  return str;
+}
+
+// Add the grid to the page.
+document.getElementById('g').appendChild(grid);
+
+// Generates HTML for the grid.
+function clickableGrid(rows, cols, callback) {
+  var i = 0;
+  var grid = document.createElement('table');
+  grid.className = 'grid';
+  for (var r=0;r<rows;++r){
+    var tr = grid.appendChild(document.createElement('tr'));
+    for (var c=0;c<cols;++c){
+      var cell = tr.appendChild(document.createElement('td'));
+      cell.innerHTML = 'X';
+      if (i== Math.floor(rows * cols / 2)) {
+        cell.className = 'clicked';
+        lastClicked = cell;
+        lastRow = r;
+        lastCol = c;
+      }
+      ++i;
+      cell.addEventListener('click',(function(el,r,c,i){
+        return function(){
+          callback(el,r,c,i);
+        }
+      })(cell,r,c,i),false);
+    }
+  }
+  return grid;
+}
+
+// When we start, send two test commands.
+commandList.push({l:5, r:5, t:1});
+commandList.push({l:10, r:10, t:1});
+executeCommand();
+
+</script>
+</html>
