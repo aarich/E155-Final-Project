@@ -60,11 +60,11 @@ Matthew \textsc{Spencer}
 
 
 
-{\large December 11, 2015}\\[1cm] 
+{\large December 11, 2015}\\[5cm] 
 
 
 \begin{abstract}
-The team builds an internet-controlled autonomous ground vehicle. The main parts of the project involve a Raspberry Pi 2 that hosts a website and sends data over bluetooth and an FPGA on which UART and driving logic is executed. The resulting system allows a user to interact with a website to command the tank to travel between locations.
+The team built an internet-controlled autonomous ground vehicle. The main parts of the project involve a Raspberry Pi 2 that hosts a website and sends data over Bluetooth and an FPGA on which UART and driving logic is executed. The resulting system allows a user to interact with a website to command the tank to travel to specific locations.
 \end{abstract}
 
 \vfill
@@ -98,28 +98,28 @@ The team builds an internet-controlled autonomous ground vehicle. The main parts
 \label{fig:sys}
 \end{figure}
 
-The Internet-Controlled Autonomous Ground Vehicle is a treaded chassis that holds an FPGA with bluetooth listening capabilities. A companion website allows a user to interact with the vehicle by commanding it to travel it to various places. The motivation behind this project was to build a tank that could navigate within a map and shoot NERF darts. By building a tank that is remotely controlled over the internet, the more difficult part of this concept is realized.
+The internet-controlled autonomous ground vehicle is a treaded chassis that holds an FPGA with Bluetooth listening capabilities. A companion website allows a user to interact with the vehicle by commanding it to travel it to specific locations. The motivation behind this project was to build a tank that could navigate within a map and shoot NERF darts. By building a tank that is remotely controlled over the internet, the more difficult part of this concept is realized.
 
-The project involves a website hosted by Apache2 on the Raspberry Pi 2, which sends commands from the a bluetooth dongle to a bluetooth receiver (BlueSMiRF) that is connected to the FPGA. The FPGA drives two motors. Each component is described further in the following sections.
+The project involves a website hosted by Apache2 on the Raspberry Pi 2, which sends commands from the Bluetooth dongle to a Bluetooth receiver (BlueSMiRF) that is connected to the FPGA. The FPGA drives two motors. Each component is described further in the following sections. The control flow diagram is shown in Figure \ref{fig:sys}.
 
 \section{New Hardware}
 \subsection{BlueSMiRF}
 The Raspberry Pi and FPGA communicate with each other using a set of Bluetooth modules.  The FPGA is wired to a SparkFun BlueSMiRF module.  The Raspberry Pi has a Belkin FT8001 Bluetooth dongle
 
-The BlueSMiRF is a Bluetooth RF module that has a UART pinout to interface with.  To set up the interface, the device is powered with a single-sided +5V/GND power source, in this case the same 5V output from the voltage regulator and ground line on the breadboard.  RTS and CTS are wired together, and the TX and RX pins on the BlueSMiRF are connected to the pins of the FPGA that are assigned to RX and TX, respectively. (how to find address and how to config)
+The BlueSMiRF is a Bluetooth RF module that has a UART pinout to interface with.  To set up the interface, the device is powered with a single-sided +5V/GND power source, in this case the same 5V output from the voltage regulator and ground line on the breadboard.  RTS and CTS are wired together, and the TX and RX pins on the BlueSMiRF are connected to the pins of the FPGA that are assigned to RX and TX, respectively. The default settings for the BlueSMiRF are sufficient for this project. The implementation has the address of the BlueSMiRF hardcoded, which requires the address to be discovered first. This can be done with a scan of all devices in the area. The scan is initiated with the terminal command
+\begin{verbatim}
+      hcitool scan
+\end{verbatim}
+This returns the address and name of all devices. Detailed discussion on how the Raspberry Pi communicates with the BlueSMiRF is provided in Section \ref{sec:pc}.
 
-The Belkin FT8001 is a USB Bluetooth dongle that can be attached directly to the Raspberry Pi's USB port. (how to config)
+The Belkin FT8001 is a USB Bluetooth dongle that can be attached directly to the Raspberry Pi's USB port. There are no settings to configure for this device, but a driver must be installed. The project used the following drivers, installed with \verb.apt-get.: bluez, python-dev, python-bluez, and bluetooth.
 
 To power the vehicle, the FPGA's H-Bridge outputs 1/2 and 3/4 are connected to two Pololu Brushed DC motors.  The motors operate at 3-12V volts, which allows the same voltage regulator to power the input of the FPGA and the motors.
 \subsection{Vehicle}
 
-The vehicle is a Tamiya Tracked vehicle modified to accept a double gear box. The motors are wired directly to the H-Bridge outputs. The battery case is wired directly to a 5V regulator, which powers the system. The breadboard is mounted on three sheet metal stands.
+The vehicle is a Tamiya tracked vehicle modified to accept a double gear box. The motors are wired directly to the H-Bridge outputs. The battery case is wired directly to a 5V regulator, which powers the system. The breadboard is mounted on three sheet metal stands.
 
-\section{Schematics}
-
-Figure \ref{fig:breadboard} shows the layout of the breadboard. The two main components are the FPGA and the BlueSMiRF. The 7.4 V power source is comes from two TrustFire 3.7 V batteries, and is regulated with the 5V regulator. The switch makes for easy powering on and off of the vehicle.
-
-\begin{figure}
+\begin{figure}[h!]
 \begin{center}
 \includegraphics[width=0.7\textwidth]{breadboard}
 \end{center}
@@ -127,9 +127,13 @@ Figure \ref{fig:breadboard} shows the layout of the breadboard. The two main com
 \label{fig:breadboard}
 \end{figure}
 
+\section{Schematics}
+
+Figure \ref{fig:breadboard} shows the layout of the breadboard. The two main components are the FPGA and the BlueSMiRF. The 7.4 V power source is comes from two TrustFire 3.7 V batteries, and is regulated with the 5V regulator. The switch makes for easy powering on and off of the vehicle.
+
 \section{Raspberry Pi}
 
-The Raspberry Pi 2 serves several functions. It hosts an Apache2 website accessible via the internet and contains code to submit commands to a bluetooth dongle. These two functions are integrated such that a user interacts with the website, indirectly sending commands over bluetooth. Figure \ref{fig:piroutines} show the flow of data and control through the Pi.
+The Raspberry Pi 2 serves several functions. It hosts an Apache2 website accessible via the internet and contains code to submit commands to a Bluetooth dongle. These two functions are integrated such that a user interacts with the website, indirectly sending commands over Bluetooth. Figure \ref{fig:piroutines} show the flow of data and control through the Pi.
 
 The languages in use on the Pi are HTML, JavaScript, C, and Python.
 
@@ -143,22 +147,19 @@ The languages in use on the Pi are HTML, JavaScript, C, and Python.
 
 \subsection{Website}
 
-The website contains a visual user interface that contains instructions for use, a grid on which to input locations for the robot to maneuver to, a list of the commands currently buffered for sending. The resulting webpage is shown in Appendix \ref{sec:web}, along with the code in Appendix \ref{sec:webcode}. The website was built using HTML, JavaScript, and Bootstrap CSS. 
+The website is a visual user interface that contains instructions for use, a grid on which to input locations for the robot to maneuver to, a list of the commands currently buffered for sending, and a "receipt" of the most recent command sent to the FPGA. The site also contains alternative methods of controlling the vehicle.  The resulting webpage is shown in Appendix \ref{sec:web}, along with the code in Appendix \ref{sec:webcode}. The website was built using HTML, JavaScript, and Bootstrap CSS. 
 
 The Pi hosts the website. Upon clicking in a grid space, the page's JavaScript calculates the left and right tread speeds and duration of movement required to get the tank to move from its original position to the new position. The current algorithm involves first moving north/south, turning, moving east/west, and finally turning to reorient itself vertically. Once the commands are generated, the JavaScript makes an HTTP GET request to the inputChars resource of the Pi. When the request is completed, the page updates, either submitting the next command in the buffer or waiting for another input from the user.
 
 \subsection{Python/C}
-After receiving a GET request, the common gateway interface (CGI) reads the input parameters (three integers) and converts them into a format that the vehicle understands. This involves converting the numbers to sign/magnitude bit representations. Because of how the UART works, the C also reverses the bits.
+\label{sec:pc}
+After receiving a GET request, the common gateway interface (CGI) reads the input parameters (three integers) and converts them into a format that the vehicle understands. This involves converting the numbers to sign/magnitude bit representations. Because of how the UART was implemented, the C code reverses the bits such that the MSb is transmitted first.
 
-Then, the C program calls a Python script. The Python script utilizes the \verb.bluetooth. module to allow sending data using the bluetooth dongle. When called, the Python script sends the commands, one at a time, to the robot. The system sleeps for the amount of time to give the vehicle enough time to move. The code on the Pi is shown in Appendix \ref{sec:pi}. 
+Then, the C program calls a Python script. The Python script utilizes the \verb.Bluetooth. module to allow sending data using the Bluetooth dongle. When called, the Python script sends the commands, one at a time, to the robot. The system sleeps for the amount of time to give the vehicle enough time to move. The code on the Pi is shown in Appendix \ref{sec:pi}. 
 
-To send data over bluetooth, the address of the BlueSMiRF must be known. This can be done with a scan of all devices in the area. The scan is initiated with the terminal command
-\begin{verbatim}
-      hcitool scan
-\end{verbatim}
-Another way to do it is to scan in the Python script and match the name of each device in the area to the device's name. In any case, something has to be hardcoded into the Python script to make a connection with the BlueSMiRF. To save time when connecting to the vehicle, the address is hardcoded and thus there is no need to scan.
-
-Sending data in Python with the \verb.bluetooth. module is fairly simple.
+To send data over Bluetooth, the address of the BlueSMiRF must be known. One way to do find this is to issue the \verb.hcitool scan. command in Terminal. Another way is to scan in the Python script and match the name of each device in the area to the device's name. In any case, something has to be hardcoded into the Python script to make a connection with the BlueSMiRF. To save time when connecting to the vehicle, the address is hardcoded and thus there is no need to scan.
+\newpage
+Sending data in Python with the \verb.Bluetooth. module is fairly simple.
 
 \begin{verbatim}
       sock = BluetoothSocket( RFCOMM )
@@ -235,21 +236,18 @@ Raspberry Pi 2			    	& to vehicle.             							& E155                   
                         				& Wirelessly communicate via Bluetooth between  	&							&\\
 BlueSMiRF				& Pi and $\mu$Mudd board.		 			& E155                                		& 0.00                               	\\ \hline
 Belkin Components			&										&							&					\\ 
-FT8001					& Send bluetooth data from Pi.					& E155                                		& 0.00                               	\\ \hline
+FT8001					& Send Bluetooth data from Pi.					& E155                                		& 0.00                               	\\ \hline
 2X TrustFire 14500			& Li Ion battery, 3.7 V 						& Aaron Rosen					& 0.00				\\ \hline
 Brushed DC Motor			& Pololu 1117. Size: 130						& Aaron Rosen					& 0.00				\\ \hline
 LM 7805 CT				& 5V Regulator						& Stockroom					& 0.00				\\ \hline
 \end{tabular}
 \end{center}
 
-
 \section{Appendices}
 
 \subsection{The Website}
 \label{sec:web}
-
-\includegraphics[width=\textwidth]{website}
-
+\includegraphics[width=\textwidth]{website.pdf}
 
 \subsection{FPGA Diagrams}
 \subsubsection{Controller}
@@ -307,7 +305,7 @@ This module reads three 8 bit inputs from the BlueSMiRF.
 \\ \verb.sampler. - UART sampler (for scope only)
 \\ \verb.RXdone. - signals end of char received (for scope only)
 
-
+\newpage
 %%%%%
 \subsubsection{Send A Char}
 This module sends one 8 bit output to the BlueSMiRF.
@@ -323,20 +321,26 @@ This module sends one 8 bit output to the BlueSMiRF.
 
 \subsection{FPGA Code}
 \label{sec:fpgacode}
-\lstinputlisting[language=Verilog]{VehicleControl.sv}
+\subsubsection{Main SystemVerilog Code}
+\lstinputlisting[language=Verilog, basicstyle=\ttfamily\scriptsize]{VehicleControl.sv}
 
+\subsubsection{Generated PLL Clock}
+{
+\small
+\lstinputlisting[language=Verilog, basicstyle=\ttfamily\scriptsize]{PLLclk2.v}
+}
 \subsection{Raspberry Pi Code}
 \label{sec:pi}
 
 \subsubsection{CGI Resource}
-\lstinputlisting[language=C]{inputChars.c}
+\lstinputlisting[language=C, basicstyle=\ttfamily\scriptsize]{inputChars.c}
 
 \subsubsection{Send Data over Bluetooth}
-\lstinputlisting[language=Python]{sendData.py}
+\lstinputlisting[language=Python, basicstyle=\ttfamily\scriptsize]{sendData.py}
 
 \subsubsection{Webpage}
 \label{sec:webcode}
-\lstinputlisting[language=html]{final.html}
+\lstinputlisting[language=html, basicstyle=\ttfamily\scriptsize]{final.html}
 
 
 \end{document}
